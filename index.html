@@ -8,16 +8,6 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!--
-        Motivational-Numerology integration
-        Source: https://github.com/evoluteur/motivational-numerology
-        Licensed under AGPL-3.0.
-        The repository's calculation and interpretation objects are loaded here
-        so the clinician result view uses the project's own definitions.
-    -->
-    <script src="https://cdn.jsdelivr.net/gh/evoluteur/motivational-numerology@master/i18n/meaning_en.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/evoluteur/motivational-numerology@master/js/numerology.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -108,11 +98,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: .5rem;
             min-height: 58px;
-            padding: .75rem;
+            padding: .85rem 1rem;
             text-align: center;
             background: #fff;
-            border: 1px solid #dbe4ec;
+            border: 1.5px solid #dbe4ec;
             border-radius: 1rem;
             color: #475569;
             cursor: pointer;
@@ -128,7 +119,7 @@
             background: var(--sage-soft);
             border-color: #34a77b;
             color: #047857;
-            box-shadow: 0 0 0 3px rgba(16,185,129,.08);
+            box-shadow: 0 0 0 3px rgba(16,185,129,.10);
             font-weight: 800;
         }
 
@@ -150,8 +141,54 @@
             font-weight: 800;
         }
 
+        .phase-pill {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .35rem .7rem;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 800;
+            background: #f1f5f9;
+            color: #64748b;
+            transition: all .2s ease;
+        }
+
+        .phase-pill.active {
+            background: var(--sage-soft);
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+
+        .phase-pill.done {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .q-jump-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: .55rem;
+            border: 1px solid #dbe4ec;
+            background: #fff;
+            color: #64748b;
+            font-size: .75rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+        .q-jump-dot.answered {
+            background: var(--sage-soft);
+            border-color: #34a77b;
+            color: #047857;
+        }
+
         .progress-track {
-            height: 6px;
+            height: 7px;
             overflow: hidden;
             background: #edf1f3;
             border-radius: 999px;
@@ -172,6 +209,33 @@
             color: #64748b;
             font-size: .75rem;
             font-weight: 700;
+        }
+
+        .sync-step {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            padding: .85rem 1rem;
+            border-radius: 1rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: .88rem;
+            font-weight: 700;
+            text-align: left;
+            transition: all .2s ease;
+        }
+
+        .sync-step.active {
+            background: var(--sage-soft);
+            border-color: #a7f3d0;
+            color: #065f46;
+        }
+
+        .sync-step.done {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
         }
 
         .numerology-number-card {
@@ -219,17 +283,27 @@
         }
 
         .severity-bar {
-            height: 9px;
+            position: relative;
+            height: 10px;
             border-radius: 999px;
             background: #edf2f5;
             overflow: hidden;
         }
 
-        .severity-bar > div {
+        .severity-bar > div.fill {
             height: 100%;
             background: var(--sage);
             border-radius: inherit;
             transition: width .5s ease;
+        }
+
+        .cutoff-tick {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1.5px;
+            background: rgba(15, 23, 42, 0.22);
+            z-index: 2;
         }
 
         .analysis-card { border: 1px solid #e5e7eb; background: #fff; border-radius: 1rem; padding: 1rem; }
@@ -253,16 +327,17 @@
         details summary::-webkit-details-marker { display: none; }
 
         @media (max-width: 640px) {
-            .radio-option span { min-height: 52px; font-size: .88rem; }
+            .radio-option span { min-height: 54px; font-size: .92rem; justify-content: flex-start; text-align: left; }
             .glass-panel { border-radius: 1.5rem !important; }
         }
 
         @media print {
-            body { background: white; }
-            .glass-panel { border: 0; box-shadow: none; background: white; }
+            body { background: white; font-size: 11pt; }
+            .glass-panel { border: 0; box-shadow: none; background: white; padding: 0 !important; }
             .no-print, #clinician-modal { display: none !important; }
             details:not([open]) { display: block; }
             details summary { display: none; }
+            section { break-inside: avoid; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -290,9 +365,13 @@
             </div>
 
             <h2 id="clinician-modal-title" class="text-2xl font-extrabold text-slate-800">Clinician Portal</h2>
-            <p class="text-sm text-slate-500 mt-2 leading-relaxed">Secure access to assessment records and screening results.</p>
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">Server-authenticated access to screening profiles and intake records.</p>
 
-            <label for="clinician-pin" class="block text-sm font-extrabold text-slate-600 mt-6 mb-2">Access PIN</label>
+            <p id="clinician-timeout-note" class="hidden text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
+                Your previous session was locked automatically due to inactivity.
+            </p>
+
+            <label for="clinician-pin" class="block text-sm font-extrabold text-slate-600 mt-5 mb-2">Access PIN</label>
             <input id="clinician-pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="32" class="input-base" placeholder="Enter clinician PIN">
 
             <p id="clinician-login-error" class="hidden text-sm text-red-600 font-bold mt-3" aria-live="polite">Access denied. Please check your PIN.</p>
@@ -303,7 +382,7 @@
 
             <div class="flex items-center justify-center gap-2 mt-5 text-xs text-slate-400 font-semibold">
                 <span aria-hidden="true">🔒</span>
-                <span>Clinician access only</span>
+                <span>All scoring and records are verified on the server</span>
             </div>
         </div>
     </div>
@@ -332,18 +411,29 @@
                         <button id="lang-btn" type="button" class="focus-ring px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-xs font-extrabold transition-colors">Roman Urdu</button>
                         <button id="clinician-lock" type="button" class="focus-ring inline-flex items-center gap-2 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-800 rounded-full text-xs sm:text-sm font-extrabold shadow-sm transition-all" aria-label="Open clinician portal">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002-2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
                             Clinician
+                        </button>
+                        <button id="header-lock-now" type="button" class="hidden focus-ring inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-full text-xs sm:text-sm font-extrabold transition-all">
+                            Lock Portal
                         </button>
                     </div>
                 </div>
 
-                <div class="pt-5">
+                <div id="client-progress-header" class="pt-5">
+                    <!-- 4-Phase Stage Strip -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span id="phase-pill-0" class="phase-pill active">1. About You</span>
+                        <span id="phase-pill-1" class="phase-pill">2. Guided Reflection</span>
+                        <span id="phase-pill-2" class="phase-pill">3. Well-being Scales</span>
+                        <span id="phase-pill-3" class="phase-pill">4. Review & Submit</span>
+                    </div>
+
                     <div class="flex items-center justify-between gap-4 mb-2">
                         <div>
                             <p id="section-label" class="text-xs font-extrabold uppercase tracking-widest text-slate-400">About you</p>
-                            <p id="section-counter" class="text-sm font-bold text-slate-600 mt-1">Step 1 of 13</p>
+                            <p id="section-counter" class="text-sm font-bold text-slate-600 mt-1">Step 1 of 14</p>
                         </div>
                         <div class="text-right">
                             <div id="progress-text" class="text-xs font-extrabold uppercase tracking-wider text-slate-500">0% Complete</div>
@@ -354,6 +444,18 @@
                 </div>
             </header>
 
+            <!-- Draft Recovery Banner -->
+            <div id="draft-recovery-banner" class="hidden mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <p class="text-sm font-extrabold text-emerald-950">Welcome back. You have an unfinished intake saved on this device.</p>
+                    <p id="draft-recovery-meta" class="text-xs text-emerald-800 mt-1">Your answers are kept locally until you submit.</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="btn-resume-draft" type="button" class="focus-ring px-4 py-2.5 rounded-full bg-[#479375] hover:bg-[#38785e] text-white text-xs font-extrabold shadow-sm">Resume session</button>
+                    <button id="btn-discard-draft" type="button" class="focus-ring px-4 py-2.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-xs font-extrabold">Start fresh</button>
+                </div>
+            </div>
+
             <!-- Patient intro / demographics -->
             <section id="step-demographics" class="step-section active pt-8" aria-labelledby="intro-title">
                 <div class="max-w-3xl">
@@ -363,7 +465,7 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
                         <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Time</p><p class="mt-1 font-extrabold text-slate-700">About 10 min</p></div>
-                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Format</p><p class="mt-1 font-extrabold text-slate-700">Private & structured</p></div>
+                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Format</p><p class="mt-1 font-extrabold text-slate-700">Auto-saved locally</p></div>
                         <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Language</p><p class="mt-1 font-extrabold text-slate-700">English / Roman Urdu</p></div>
                     </div>
 
@@ -372,7 +474,7 @@
                             <span class="mt-0.5 text-emerald-600" aria-hidden="true">🔒</span>
                             <div>
                                 <p class="font-extrabold text-slate-700">Privacy note</p>
-                                <p class="text-sm text-slate-500 leading-relaxed mt-1">Your responses are intended for clinical assessment and review by your practitioner. Do not use this form for emergencies.</p>
+                                <p class="text-sm text-slate-500 leading-relaxed mt-1">Your responses are transmitted directly to your practitioner's secure clinical backend and erased from this browser once submitted. Do not use this form for emergencies.</p>
                             </div>
                         </div>
                     </div>
@@ -479,30 +581,42 @@
 
             <!-- Completion / booking -->
             <section id="step-booking" class="step-section pt-8 text-center relative" aria-labelledby="completion-title">
-                <div id="submission-state" class="max-w-xl mx-auto py-10">
+                <div id="submission-state" class="max-w-xl mx-auto py-6">
+                    <!-- Stepped Sync Progress -->
                     <div id="submission-loading" class="hidden">
                         <div class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-5 animate-pulse"><span class="text-2xl">⟳</span></div>
-                        <h2 class="text-3xl font-extrabold text-slate-800">Submitting securely...</h2>
-                        <p class="text-slate-500 mt-3">Please keep this window open while your assessment is submitted.</p>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800">Saving to your clinical record</h2>
+                        <p class="text-slate-500 mt-2 mb-6 text-sm">Please keep this window open for a few seconds.</p>
+                        <div class="space-y-3">
+                            <div id="sync-step-1" class="sync-step"><span>1.</span><span>Preparing your intake responses securely...</span></div>
+                            <div id="sync-step-2" class="sync-step"><span>2.</span><span>Logging assessment to Ghazali Clinical Practice backend...</span></div>
+                            <div id="sync-step-3" class="sync-step"><span>3.</span><span>Confirming receipt and clearing local device draft...</span></div>
+                        </div>
                     </div>
 
+                    <!-- Warm Reassuring Closure Screen -->
                     <div id="submission-success" class="hidden">
                         <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-50 border border-white shadow-sm mb-6"><svg class="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></div>
-                        <h2 id="completion-title" class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4">Your assessment has been submitted.</h2>
-                        <p class="text-slate-500 max-w-2xl mx-auto text-lg leading-relaxed">Thank you for sharing your experience. You can now arrange your session or contact the practice directly.</p>
-                        <div id="client-result-summary" class="hidden mt-8 text-left rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-                            <div class="flex items-center gap-2 mb-3"><span class="section-chip"><span>Summary</span></span><span class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Initial screening snapshot</span></div>
-                            <h3 class="text-xl font-extrabold text-slate-800">Your initial well-being summary</h3>
-                            <p id="client-summary-overview" class="text-sm text-slate-600 leading-relaxed mt-3"></p>
-                            <div id="client-summary-signals" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5"></div>
-                            <div class="mt-5 rounded-2xl bg-emerald-50 border border-emerald-100 p-4"><p class="text-sm font-extrabold text-emerald-900">What happens next?</p><p class="text-sm text-emerald-800 leading-relaxed mt-1">A fuller interpretation of your responses requires professional clinical discussion and context. Detailed qualitative and quantitative analysis is available during a session.</p></div>
+                        <h2 id="completion-title" class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-3">Thank you. Your intake is complete.</h2>
+                        <p class="text-slate-500 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">Taking time to reflect on these questions helps us focus our session on what matters most to you.</p>
+
+                        <div class="mt-7 text-left rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Reference Code</span>
+                                <span id="closure-ref-code" class="text-sm font-extrabold text-[#479375] bg-emerald-50 px-3 py-1 rounded-full">GCG-000000</span>
+                            </div>
+                            <p class="text-sm text-slate-700 leading-relaxed"><strong>What happens next:</strong> Your practitioner will review your responses before your appointment. You do not need to memorize any answers or prepare anything further.</p>
+                            <p class="text-sm text-slate-600 leading-relaxed"><strong>Privacy confirmation:</strong> For your privacy, your temporary browser draft has been cleared from this device. All scoring and clinical review occur strictly inside the clinician portal.</p>
+                            <div class="pt-2">
+                                <button id="btn-copy-receipt" type="button" class="focus-ring px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-colors">Copy reference receipt</button>
+                            </div>
                         </div>
                     </div>
 
                     <div id="submission-error" class="hidden">
                         <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-50 border border-amber-100 mb-6"><span class="text-3xl">!</span></div>
                         <h2 class="text-3xl font-extrabold text-slate-800 mb-4">We couldn't confirm the submission.</h2>
-                        <p class="text-slate-500 max-w-xl mx-auto text-lg leading-relaxed">Your answers are still available in this browser session. Please try again.</p>
+                        <p class="text-slate-500 max-w-xl mx-auto text-lg leading-relaxed">Your answers are still safely preserved in this browser session. Please try again.</p>
                         <button id="retry-submit" type="button" class="focus-ring mt-6 px-7 py-3.5 bg-[#479375] hover:bg-[#38785e] text-white rounded-full font-extrabold shadow-md">Try again</button>
                     </div>
                 </div>
@@ -512,7 +626,7 @@
                         <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600">!</div>
                         <div>
                             <h3 class="font-extrabold text-red-900 text-lg">Immediate support may be needed</h3>
-                            <p class="text-red-800 text-sm leading-relaxed mt-1">One of the responses indicates possible thoughts about death or self-harm. Please do not wait for a routine appointment if you feel unsafe or at immediate risk. Contact emergency support or a trusted person now.</p>
+                            <p class="text-red-800 text-sm leading-relaxed mt-1">One of your responses indicates possible thoughts about death or self-harm. Please do not wait for a routine appointment if you feel unsafe or at immediate risk. Contact emergency support or a trusted person now.</p>
                             <a href="tel:03317777784" class="inline-flex mt-4 px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold">Call support: 0331 777 7784</a>
                         </div>
                     </div>
@@ -528,9 +642,9 @@
             <section id="step-admin-list" class="step-section pt-8" aria-labelledby="admin-title">
                 <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 border-b border-slate-100 pb-6">
                     <div>
-                        <div class="section-chip mb-3"><span>🔒</span><span>Clinician portal</span></div>
+                        <div class="section-chip mb-3"><span>🔒</span><span>Clinician triage board</span></div>
                         <h2 id="admin-title" class="text-3xl font-extrabold text-slate-800">Patient files</h2>
-                        <p id="admin-subtitle" class="text-slate-500 font-semibold text-sm mt-2">Review screening results and qualitative intake data.</p>
+                        <p id="admin-subtitle" class="text-slate-500 font-semibold text-sm mt-2">Server-scored screening results and qualitative intake records.</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button id="admin-refresh" type="button" class="focus-ring px-4 py-2.5 rounded-full border border-slate-200 bg-white text-slate-700 font-extrabold text-sm hover:bg-slate-50">Refresh</button>
@@ -540,21 +654,22 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-6">
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Clients</p><p id="stat-records" class="text-2xl font-extrabold text-slate-800 mt-1">0</p></div>
-                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Needs review</p><p id="stat-review" class="text-2xl font-extrabold text-slate-800 mt-1">0</p></div>
-                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Safety flags</p><p id="stat-safety" class="text-2xl font-extrabold text-slate-800 mt-1">0</p></div>
-                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Last update</p><p id="stat-updated" class="text-sm font-extrabold text-slate-700 mt-2">--</p></div>
+                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Needs review</p><p id="stat-review" class="text-2xl font-extrabold text-amber-700 mt-1">0</p></div>
+                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Safety flags</p><p id="stat-safety" class="text-2xl font-extrabold text-red-700 mt-1">0</p></div>
+                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Last sync</p><p id="stat-updated" class="text-sm font-extrabold text-slate-700 mt-2">--</p></div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 mb-5">
                     <label class="relative flex-1">
                         <span class="sr-only">Search patient files</span>
-                        <input id="patient-search" type="search" class="input-base pl-11" placeholder="Search by name or contact...">
+                        <input id="patient-search" type="search" class="input-base pl-11" placeholder="Search by name, reference code, or contact...">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">⌕</span>
                     </label>
-                    <select id="patient-filter" class="input-base sm:w-48">
+                    <select id="patient-filter" class="input-base sm:w-52">
                         <option value="all">All records</option>
-                        <option value="review">Needs review</option>
                         <option value="safety">Safety flag</option>
+                        <option value="review">Needs review</option>
+                        <option value="routine">Routine / Minimal</option>
                     </select>
                 </div>
 
@@ -637,8 +752,9 @@
                         <h2 id="results-title" class="text-3xl font-extrabold text-slate-800">Ghazali Clinical Portal</h2>
                         <p id="patient-summary" class="text-[#479375] font-extrabold text-sm mt-2">Patient record</p>
                     </div>
-                    <div class="flex gap-2 no-print">
+                    <div class="flex flex-wrap gap-2 no-print">
                         <button id="results-back" type="button" class="focus-ring px-4 py-2.5 rounded-full border border-slate-200 bg-white text-slate-700 font-extrabold text-sm">← Patient files</button>
+                        <button id="btn-copy-note" type="button" class="focus-ring px-4 py-2.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-sm">Copy summary</button>
                         <button id="btn-print" type="button" class="focus-ring px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm">Print</button>
                     </div>
                 </div>
@@ -663,15 +779,33 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                     <div class="rounded-3xl bg-white border border-slate-100 p-5 sm:p-6 shadow-sm">
                         <div class="flex items-center justify-between mb-5">
-                            <div><h3 class="font-extrabold text-slate-800">Screening profile</h3><p class="text-xs text-slate-400 mt-1">For clinical review, not diagnosis</p></div>
+                            <div><h3 class="font-extrabold text-slate-800">Screening profile</h3><p class="text-xs text-slate-400 mt-1">Vertical ticks show clinical severity cutoffs</p></div>
                         </div>
                         <div class="space-y-5">
-                            <div><div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">Depression</span><span id="bar-phq-label" class="text-xs font-extrabold text-slate-500"></span></div><div class="severity-bar"><div id="bar-phq"></div></div></div>
-                            <div><div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">Anxiety</span><span id="bar-gad-label" class="text-xs font-extrabold text-slate-500"></span></div><div class="severity-bar"><div id="bar-gad"></div></div></div>
-                            <div><div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">DASS depression</span><span id="bar-dass-d-label" class="text-xs font-extrabold text-slate-500"></span></div><div class="severity-bar"><div id="bar-dass-d"></div></div></div>
-                            <div><div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">DASS anxiety</span><span id="bar-dass-a-label" class="text-xs font-extrabold text-slate-500"></span></div><div class="severity-bar"><div id="bar-dass-a"></div></div></div>
-                            <div><div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">DASS stress</span><span id="bar-dass-s-label" class="text-xs font-extrabold text-slate-500"></span></div><div class="severity-bar"><div id="bar-dass-s"></div></div></div>
-                            <div><div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">Well-being</span><span id="bar-wem-label" class="text-xs font-extrabold text-slate-500"></span></div><div class="severity-bar"><div id="bar-wem"></div></div></div>
+                            <div>
+                                <div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">Depression</span><span id="bar-phq-label" class="text-xs font-extrabold text-slate-500"></span></div>
+                                <div class="severity-bar"><div id="bar-phq" class="fill"></div><span class="cutoff-tick" style="left:18.5%"></span><span class="cutoff-tick" style="left:37%"></span><span class="cutoff-tick" style="left:55.5%"></span></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">Anxiety</span><span id="bar-gad-label" class="text-xs font-extrabold text-slate-500"></span></div>
+                                <div class="severity-bar"><div id="bar-gad" class="fill"></div><span class="cutoff-tick" style="left:23.8%"></span><span class="cutoff-tick" style="left:47.6%"></span><span class="cutoff-tick" style="left:71.4%"></span></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">DASS depression</span><span id="bar-dass-d-label" class="text-xs font-extrabold text-slate-500"></span></div>
+                                <div class="severity-bar"><div id="bar-dass-d" class="fill"></div><span class="cutoff-tick" style="left:23.8%"></span><span class="cutoff-tick" style="left:33.3%"></span><span class="cutoff-tick" style="left:50%"></span></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">DASS anxiety</span><span id="bar-dass-a-label" class="text-xs font-extrabold text-slate-500"></span></div>
+                                <div class="severity-bar"><div id="bar-dass-a" class="fill"></div><span class="cutoff-tick" style="left:19%"></span><span class="cutoff-tick" style="left:23.8%"></span><span class="cutoff-tick" style="left:35.7%"></span></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">DASS stress</span><span id="bar-dass-s-label" class="text-xs font-extrabold text-slate-500"></span></div>
+                                <div class="severity-bar"><div id="bar-dass-s" class="fill"></div><span class="cutoff-tick" style="left:35.7%"></span><span class="cutoff-tick" style="left:45.2%"></span><span class="cutoff-tick" style="left:61.9%"></span></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2"><span class="text-sm font-extrabold text-slate-700">Well-being</span><span id="bar-wem-label" class="text-xs font-extrabold text-slate-500"></span></div>
+                                <div class="severity-bar"><div id="bar-wem" class="fill"></div><span class="cutoff-tick" style="left:61.4%"></span><span class="cutoff-tick" style="left:85.7%"></span></div>
+                            </div>
                         </div>
                         <div class="mt-6 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 leading-relaxed"><p id="interp-phq9"></p><p id="interp-gad7" class="mt-2"></p><p id="interp-dass" class="mt-2"></p><p id="interp-wemwbs" class="mt-2"></p></div>
                     </div>
@@ -688,9 +822,9 @@
                             <div>
                                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-extrabold uppercase tracking-wider mb-3"><span>Integrated formulation</span></div>
                                 <h3 class="text-xl sm:text-2xl font-extrabold text-slate-800">Qualitative + Quantitative Analysis</h3>
-                                <p class="text-sm text-slate-500 mt-2 max-w-3xl leading-relaxed">IPA-informed phenomenological synthesis and structured thematic analysis are integrated with the screening profile to identify convergence, divergence, and areas for clinical exploration.</p>
+                                <p class="text-sm text-slate-500 mt-2 max-w-3xl leading-relaxed">Server-computed IPA-informed phenomenological synthesis and structured thematic analysis integrated with the screening profile.</p>
                             </div>
-                            <div class="rounded-2xl bg-white border border-slate-200 p-3 max-w-sm"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Method note</p><p class="text-xs text-slate-600 leading-relaxed mt-1">This is a structured decision-support synthesis. It does not constitute a full clinician-led IPA, a diagnosis, or a substitute for clinical judgement.</p></div>
+                            <div class="rounded-2xl bg-white border border-slate-200 p-3 max-w-sm"><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Method note</p><p class="text-xs text-slate-600 leading-relaxed mt-1">This is a structured decision-support synthesis computed on the backend. It does not constitute a diagnosis or replace clinical judgement.</p></div>
                         </div>
                     </div>
                     <div class="p-5 sm:p-6 space-y-6">
@@ -706,7 +840,7 @@
                     <div id="qualitative-results" class="divide-y divide-slate-100"></div>
                 </div>
 
-                <!-- Motivational Numerology -->
+                <!-- Motivational Numerology (Server-Computed) -->
                 <section id="motivational-numerology-results" class="mt-6 rounded-3xl bg-white border border-amber-200 shadow-sm overflow-hidden">
                     <div class="p-5 sm:p-6 border-b border-amber-100 bg-gradient-to-r from-amber-50/80 to-white">
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -716,7 +850,7 @@
                                 </div>
                                 <h3 class="text-xl sm:text-2xl font-extrabold text-slate-800">Motivational Numerology</h3>
                                 <p class="text-sm text-slate-500 mt-2 max-w-3xl leading-relaxed">
-                                    Calculated from the patient's full name and date of birth using the Motivational-Numerology method. This is optional, non-clinical reflective content and is not a diagnostic, psychometric, or evidence-based psychological measure.
+                                    Calculated on the server from the patient's full name and date of birth using the Motivational-Numerology method. This is optional, non-clinical reflective content and is not a diagnostic or psychometric measure.
                                 </p>
                             </div>
                             <a href="https://github.com/evoluteur/motivational-numerology" target="_blank" rel="noopener noreferrer" class="no-print shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-200 bg-white text-amber-800 text-xs font-extrabold hover:bg-amber-50">
@@ -735,14 +869,14 @@
             <!-- Footer navigation -->
             <footer id="nav-footer" class="no-print mt-10 pt-7 border-t border-slate-100 flex items-center justify-between gap-4">
                 <button id="btn-back" type="button" class="focus-ring px-5 py-3 text-slate-400 hover:text-slate-700 font-extrabold transition-colors invisible flex items-center gap-2">← Back</button>
-                <div class="security-note hidden sm:inline-flex"><span>🔒</span><span>Progress is saved on this device</span></div>
+                <div class="security-note hidden sm:inline-flex"><span>🔒</span><span id="save-status">Draft saved on this device</span></div>
                 <button id="btn-next" type="button" class="focus-ring ml-auto px-7 py-3.5 bg-[#479375] hover:bg-[#38785e] text-white rounded-full font-extrabold transition-all shadow-md hover:shadow-lg">Continue</button>
             </footer>
         </div>
     </main>
 
     <script>
-const qualSteps = [
+        const qualSteps = [
             { id: 1, en: { title: "Physical Well-being", objective: "Understanding physical signs helps us map where tension is held in your body.", q1: "Where do you feel stress or tension most in your body right now?", q2: "How have your sleep, appetite, or energy levels changed recently?" }, ur: { title: "Jismani Sehat", objective: "Jismani alamaat samajhne se humein maloom hota hai ke tension kahan hai.", q1: "Aap is waqt apne jism mein sab se zyada stress ya khichao kahan mehsoos karte hain?", q2: "Haal hi mein aap ki neend, bhook, ya energy levels mein kya tabdeeli aayi hai?" } },
             { id: 2, en: { title: "Daily Routine", objective: "Exploring how deeply these feelings might be disrupting your day-to-day life.", q1: "How is this affecting your ability to handle daily routines, work, or studies?", q2: "Have you found yourself avoiding social gatherings or friends lately?" }, ur: { title: "Rozmara ki Routine", objective: "Yeh janna zaroori hai ke in ahsasaat se aap ki rozmara zindagi kitni mutassir ho rahi hai.", q1: "Yeh aap ke rozmara ke kamo, kaam, ya padhai ko kis tarah mutassir kar raha hai?", q2: "Kya aap ne haal hi mein logon se milna julna ya doston se doori ikhtiyar ki hai?" } },
             { id: 3, en: { title: "Family Context", objective: "Acknowledging the deep importance of family roles and expectations.", q1: "How are things going at home with your family or household right now?", q2: "What expectations do family members have of you, and how are you managing them?" }, ur: { title: "Ghar aur Khandan", objective: "Khandan aur ghar walon ki ahmiyat aur asraat ko samajhna.", q1: "Ghar par khandan walon ke sath halaat kaise chal rahe hain?", q2: "Ghar walon ko aap se kya umeedein hain, aur aap unhein kaise manage kar rahe hain?" } },
@@ -754,7 +888,7 @@ const qualSteps = [
         const phq9_qs = [{en: "Little interest or pleasure in doing things", ur: "Kamon mein dil na lagna ya maza na aana"}, {en: "Feeling down, depressed, or hopeless", ur: "Udaas, pareshan, ya na-umeed mehsoos karna"}, {en: "Trouble falling or staying asleep", ur: "Neend aane mein masla ya bohut zyada sona"}, {en: "Feeling tired or having little energy", ur: "Thakaawat mehsoos karna ya energy kam lagna"}, {en: "Poor appetite or overeating", ur: "Bhook na lagna ya bohut zyada khana"}, {en: "Feeling bad about yourself", ur: "Apne bare mein bura mehsoos karna"}, {en: "Trouble concentrating on things", ur: "Cheezon par tawajjo dene (concentrate) mein masla"}, {en: "Moving or speaking slowly, or being restless", ur: "Aahista bolna/chalna, ya phir bohut bechain rehna"}, {en: "Thoughts that you would be better off dead", ur: "Aise khayalat aana ke aap mar jayein toh behtar hai"}];
         const gad7_qs = [{en: "Feeling nervous, anxious or on edge", ur: "Ghabrahat, bechaini, ya tension mehsoos karna"}, {en: "Not being able to stop or control worrying", ur: "Fikar karne se khud ko rok na paana"}, {en: "Worrying too much about different things", ur: "Mukhtalif cheezon ke baare mein hadd se fikar karna"}, {en: "Trouble relaxing", ur: "Pur-sukoon hone mein masla aana"}, {en: "Being so restless that it is hard to sit still", ur: "Itni bechaini hona ke ek jagah tik kar baithna mushkil ho"}, {en: "Becoming easily annoyed or irritable", ur: "Choti baaton par chirchida-pan ya gussa aana"}, {en: "Feeling afraid as if something awful might happen", ur: "Khauf mehsoos karna jaise kuch bura hone wala hai"}];
         const standard_opts = {en: ["Not at all", "Several days", "More than half the days", "Nearly every day"], ur: ["Bilkul nahi", "Kuch din", "Aadhe se zyada din", "Taqreeban har roz"]};
-        const dass21_qs = [{type: 3, en: "I found it hard to wind down", ur: "Mujhe pur-sukoon hone mein mushkil hui"}, {type: 2, en: "I was aware of dryness of my mouth", ur: "Mujhe apne moonh ka sookhna mehsoos hua"}, {type: 1, en: "I couldn't seem to experience any positive feeling at all", ur: "Mujhe koi musbat (positive) ehsaas nahi ho raha tha"}, {type: 2, en: "I experienced breathing difficulty", ur: "Mujhe saans lene mein dushwari hui"}, {type: 1, en: "I found it difficult to work up the initiative to do things", ur: "Kisi kaam ki shuruaat karne mein mushkil lag rahi thi"}, {type: 3, en: "I tended to over-react to situations", ur: "Main har baat par hadd se zyada react kar raha tha"}, {type: 2, en: "I experienced trembling", ur: "Mujhe jism mein kapkapi mehsoos hui"}, {type: 3, en: "I felt that I was using a lot of nervous energy", ur: "Mujhe laga meri bechaini mein energy zaya ho rahi hai"}, {type: 2, en: "I was worried about situations in which I might panic", ur: "Main aisi soorathal se darta tha jahan mujhe panic ho"}, {type: 1, en: "I felt that I had nothing to look forward to", ur: "Mujhe laga meri zindagi mein agay kuch acha nahi hai"}, {type: 3, en: "I found myself getting agitated", ur: "Main khud ko bechain aur chirchida mehsoos kar raha tha"}, {type: 3, en: "I found it difficult to relax", ur: "Mujhe relax karne mein mushkil pesh aa rahi thi"}, {type: 1, en: "I felt down-hearted and blue", ur: "Main udaas aur mayoos feel kar raha tha"}, {type: 3, en: "I was intolerant of anything that kept me from getting on", ur: "Kaam mein rukawat banne wali har cheez par gussa tha"}, {type: 2, en: "I felt I was close to panic", ur: "Mujhe laga jaise mujhe panic attack aane wala hai"}, {type: 1, en: "I was unable to become enthusiastic about anything", ur: "Mera kisi bhi cheez mein josh ya dilchaspi nahi thi"}, {type: 1, en: "I felt I wasn't worth much as a person", ur: "Mujhe apni koi qeemat ya ahmiyat mehsoos nahi hui"}, {type: 3, en: "I felt that I was rather touchy", ur: "Main choti choti baaton par hassas (touchy) ho raha tha"}, {type: 2, en: "I was aware of the action of my heart without physical exertion", ur: "Bina thakawat ke mujhe apni dil ki dharkan taiz lagi"}, {type: 2, en: "I felt scared without any good reason", ur: "Main bina kisi waja ke dara hua tha"}, {type: 1, en: "I felt that life was meaningless", ur: "Mujhe zindagi bilkul be-maqsad lag rahi thi"}];
+        const dass21_qs = [{en: "I found it hard to wind down", ur: "Mujhe pur-sukoon hone mein mushkil hui"}, {en: "I was aware of dryness of my mouth", ur: "Mujhe apne moonh ka sookhna mehsoos hua"}, {en: "I couldn't seem to experience any positive feeling at all", ur: "Mujhe koi musbat (positive) ehsaas nahi ho raha tha"}, {en: "I experienced breathing difficulty", ur: "Mujhe saans lene mein dushwari hui"}, {en: "I found it difficult to work up the initiative to do things", ur: "Kisi kaam ki shuruaat karne mein mushkil lag rahi thi"}, {en: "I tended to over-react to situations", ur: "Main har baat par hadd se zyada react kar raha tha"}, {en: "I experienced trembling", ur: "Mujhe jism mein kapkapi mehsoos hui"}, {en: "I felt that I was using a lot of nervous energy", ur: "Mujhe laga meri bechaini mein energy zaya ho rahi hai"}, {en: "I was worried about situations in which I might panic", ur: "Main aisi soorathal se darta tha jahan mujhe panic ho"}, {en: "I felt that I had nothing to look forward to", ur: "Mujhe laga meri zindagi mein agay kuch acha nahi hai"}, {en: "I found myself getting agitated", ur: "Main khud ko bechain aur chirchida mehsoos kar raha tha"}, {en: "I found it difficult to relax", ur: "Mujhe relax karne mein mushkil pesh aa rahi thi"}, {en: "I felt down-hearted and blue", ur: "Main udaas aur mayoos feel kar raha tha"}, {en: "I was intolerant of anything that kept me from getting on", ur: "Kaam mein rukawat banne wali har cheez par gussa tha"}, {en: "I felt I was close to panic", ur: "Mujhe laga jaise mujhe panic attack aane wala hai"}, {en: "I was unable to become enthusiastic about anything", ur: "Mera kisi bhi cheez mein josh ya dilchaspi nahi thi"}, {en: "I felt I wasn't worth much as a person", ur: "Mujhe apni koi qeemat ya ahmiyat mehsoos nahi hui"}, {en: "I felt that I was rather touchy", ur: "Main choti choti baaton par hassas (touchy) ho raha tha"}, {en: "I was aware of the action of my heart without physical exertion", ur: "Bina thakawat ke mujhe apni dil ki dharkan taiz lagi"}, {en: "I felt scared without any good reason", ur: "Main bina kisi waja ke dara hua tha"}, {en: "I felt that life was meaningless", ur: "Mujhe zindagi bilkul be-maqsad lag rahi thi"}];
         const dass_opts = {en: ["Did not apply to me", "Applied to some degree", "Applied considerably", "Applied very much"], ur: ["Mujh par lagoo nahi hua", "Thoda bohut lagoo hua", "Kafi hadd tak lagoo hua", "Bohut zyada lagoo hua"]};
         const wemwbs_qs = [{en: "I've been feeling optimistic about the future", ur: "Main mustaqbil (future) ke bare mein pur-umeed raha hoon"}, {en: "I've been feeling useful", ur: "Mujhe laga ke main faida-mand hoon"}, {en: "I've been feeling relaxed", ur: "Main pur-sukoon (relaxed) raha hoon"}, {en: "I've been feeling interested in other people", ur: "Mujhe dusre logon mein dilchaspi rahi hai"}, {en: "I've had energy to spare", ur: "Mujhe apne andar kafi energy mehsoos hui"}, {en: "I've been dealing with problems well", ur: "Main masail ko achi tarah handle kar raha hoon"}, {en: "I've been thinking clearly", ur: "Main bilkul saaf soch samajh pa raha hoon"}, {en: "I've been feeling good about myself", ur: "Main apne bare mein acha mehsoos kar raha hoon"}, {en: "I've been feeling close to other people", ur: "Mujhe logon se apna-pan mehsoos hua hai"}, {en: "I've been feeling confident", ur: "Main pur-aitmaad (confident) raha hoon"}, {en: "I've been able to make up my own mind", ur: "Main apne faislay khud kar pa raha hoon"}, {en: "I've been feeling loved", ur: "Mujhe mehsoos hua ke log mujhse pyar karte hain"}, {en: "I've been interested in new things", ur: "Mujhe nayi cheezon mein dilchaspi ho rahi hai"}, {en: "I've been feeling cheerful", ur: "Main khush-mizaaj raha hoon"}];
         const wemwbs_opts = {en: ["None of the time", "Rarely", "Some of the time", "Often", "All of the time"], ur: ["Kabhi nahi", "Bohat kam", "Kabhi kabhi", "Aksar", "Hamesha"]};
@@ -786,10 +920,17 @@ const qualSteps = [
 
         function renderScale(containerHtmlId, prefix, titleEn, titleUr, num, questions, optionsObj, startIndex = 0) {
             const options = optionsObj[currentLang];
+            const dotsHtml = questions.map((_, idx) => `<button type="button" class="q-jump-dot" data-jump-target="${prefix}_${idx}" title="Jump to item ${idx + 1}">${idx + 1}</button>`).join('');
             let html = `
             <section id="step-${prefix}" class="step-section pt-8" aria-labelledby="${prefix}-title">
-                <div class="section-chip mb-4"><span>${num}</span><span>${currentLang === 'en' ? 'Questionnaire' : 'Sawalat'}</span></div>
-                <h2 id="${prefix}-title" class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-8">${currentLang === 'en' ? titleEn : titleUr}</h2>
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div class="section-chip"><span>${num}</span><span>${currentLang === 'en' ? 'Questionnaire' : 'Sawalat'}</span></div>
+                    <span id="${prefix}-count-badge" class="text-xs font-extrabold text-[#479375] bg-emerald-50 px-3 py-1 rounded-full">0 / ${questions.length} answered</span>
+                </div>
+                <h2 id="${prefix}-title" class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-5">${currentLang === 'en' ? titleEn : titleUr}</h2>
+                <div class="flex flex-wrap gap-1.5 mb-7 p-3 rounded-2xl bg-slate-50 border border-slate-100" aria-label="Question navigator">
+                    ${dotsHtml}
+                </div>
                 <div class="space-y-7 mb-4">`;
 
             questions.forEach((q, idx) => {
@@ -821,6 +962,20 @@ const qualSteps = [
             renderScale('quantitative-container', 'wem', 'Choose the answer that best describes your experience over the last 2 weeks:', 'Pichle 2 hafton ke tajarbe ke mutabiq behtareen jawab chunein:', 4, wemwbs_qs, wemwbs_opts, 1);
         }
 
+        function refreshScaleJumpIndicators() {
+            [['phq', 9], ['gad', 7], ['das', 21], ['wem', 14]].forEach(([prefix, total]) => {
+                let answered = 0;
+                for (let i = 0; i < total; i++) {
+                    const checked = Boolean(document.querySelector(`input[name="${prefix}_${i}"]:checked`));
+                    if (checked) answered++;
+                    const dot = document.querySelector(`.q-jump-dot[data-jump-target="${prefix}_${i}"]`);
+                    if (dot) dot.classList.toggle('answered', checked);
+                }
+                const badge = document.getElementById(`${prefix}-count-badge`);
+                if (badge) badge.textContent = `${answered} / ${total} answered`;
+            });
+        }
+
         function applyLanguage() {
             document.querySelectorAll('.i18n-text').forEach(el => {
                 const value = el.getAttribute(`data-${currentLang}`);
@@ -843,6 +998,7 @@ const qualSteps = [
             applyLanguage();
             loadData();
             bindDynamicInputs();
+            refreshScaleJumpIndicators();
             if (!wasAdmin) showStep(currentIndex, false);
         }
 
@@ -858,38 +1014,39 @@ const qualSteps = [
 
         const sequence = ['step-demographics', 'step-qual-1', 'step-qual-2', 'step-qual-3', 'step-qual-4', 'step-qual-5', 'step-qual-6', 'step-longitudinal-reflection', 'step-phq', 'step-gad', 'step-das', 'step-wem', 'step-review', 'step-booking'];
         const stepMeta = [
-            { label: 'About you', mins: 10 },
-            { label: 'Your experience', mins: 9 },
-            { label: 'Your experience', mins: 8 },
-            { label: 'Your experience', mins: 7 },
-            { label: 'Your experience', mins: 6 },
-            { label: 'Your experience', mins: 5 },
-            { label: 'Your experience', mins: 4 },
-            { label: 'Change since last check-in', mins: 3 },
-            { label: 'Questionnaire', mins: 3 },
-            { label: 'Questionnaire', mins: 2 },
-            { label: 'Questionnaire', mins: 2 },
-            { label: 'Questionnaire', mins: 2 },
-            { label: 'Questionnaire', mins: 1 },
-            { label: 'Review', mins: 1 },
-            { label: 'Complete', mins: 0 }
+            { label: 'About you', phase: 0, mins: 10 },
+            { label: 'Physical well-being', phase: 1, mins: 9 },
+            { label: 'Daily routine', phase: 1, mins: 8 },
+            { label: 'Family context', phase: 1, mins: 7 },
+            { label: 'Life changes', phase: 1, mins: 6 },
+            { label: 'Meaning & faith', phase: 1, mins: 5 },
+            { label: 'Internal thoughts', phase: 1, mins: 4 },
+            { label: 'Change since last check-in', phase: 1, mins: 3 },
+            { label: 'Mood scale (PHQ-9)', phase: 2, mins: 3 },
+            { label: 'Anxiety scale (GAD-7)', phase: 2, mins: 2 },
+            { label: 'Stress & emotion (DASS-21)', phase: 2, mins: 2 },
+            { label: 'Well-being scale (WEMWBS)', phase: 2, mins: 1 },
+            { label: 'Review', phase: 3, mins: 1 },
+            { label: 'Complete', phase: 3, mins: 0 }
         ];
 
         let currentIndex = 0;
         let currentLang = 'en';
         let portalMode = false;
         let clinicianAuthenticated = false;
-        let clinicianPin = null;
+        let clinicianToken = null;
         let clinicianRecords = [];
         let clinicianSessionTimer = null;
         let clinicianSessionExpiresAt = 0;
-        let activePatientData = null;
+        let lastClinicianActivityAt = 0;
+        let activePatientRecord = null;
         let resultsChartInstance = null;
         let submissionInProgress = false;
         let submissionDone = false;
 
         const STORAGE_KEY = 'ghazali_intake_draft_v2';
         const SESSION_MINUTES = 15;
+        const INACTIVITY_IDLE_MS = 10 * 60 * 1000;
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo95fOPiFF6XdCMnEk924hf11HRHm6XifOyQ2yXeWwe0XZxXyhY8Hwex31ANxrWlOj/exec';
 
         function safeJsonParse(value) {
@@ -913,14 +1070,33 @@ const qualSteps = [
                 data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
             });
             document.querySelectorAll('input[type="radio"].save-target-radio:checked').forEach(el => { data[el.name] = el.value; });
+            data._savedAt = new Date().toISOString();
+            data._lastStepIndex = currentIndex;
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 const status = document.getElementById('save-status');
-                if (status) status.textContent = 'Saved on this device';
+                if (status) status.textContent = 'Draft saved on this device';
             } catch (e) {
                 console.warn('Local draft could not be saved.', e);
             }
             return data;
+        }
+
+        function checkSavedDraftBanner() {
+            let raw = null;
+            try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+            if (!raw) return;
+            const data = safeJsonParse(raw);
+            if (!data || typeof data !== 'object') return;
+            const meaningfulKeys = Object.keys(data).filter(k => !k.startsWith('_') && k !== 'client-id' && k !== 'assessment-type' && k !== 'treatment-phase' && data[k] !== '' && data[k] !== false);
+            if (!meaningfulKeys.length) return;
+
+            const banner = document.getElementById('draft-recovery-banner');
+            const meta = document.getElementById('draft-recovery-meta');
+            const name = data['demo-name'] ? `${data['demo-name']} · ` : '';
+            const timeStr = data._savedAt ? new Date(data._savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'earlier';
+            meta.textContent = `${name}${meaningfulKeys.length} responses saved at ${timeStr}.`;
+            banner.classList.remove('hidden');
         }
 
         function loadData() {
@@ -937,6 +1113,7 @@ const qualSteps = [
                 el.checked = data[el.name] === el.value;
             });
             bindDynamicInputs();
+            refreshScaleJumpIndicators();
             return data;
         }
 
@@ -952,11 +1129,11 @@ const qualSteps = [
                 const existing = localStorage.getItem('ghazali_client_id_v1');
                 if (existing) { field.value = existing; return; }
             } catch (e) {}
-            const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let code='GCG-';
-            for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
-            field.value=code;
-            try { localStorage.setItem('ghazali_client_id_v1', code); } catch(e) {}
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = 'GCG-';
+            for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            field.value = code;
+            try { localStorage.setItem('ghazali_client_id_v1', code); } catch (e) {}
         }
 
         function validateCurrentStep() {
@@ -1017,12 +1194,22 @@ const qualSteps = [
             if (portalMode) return;
             const total = sequence.length;
             const pct = Math.round((currentIndex / (total - 1)) * 100);
+            document.getElementById('client-progress-header').classList.remove('hidden');
             document.getElementById('progress-bar').style.width = `${pct}%`;
             document.getElementById('progress-text').textContent = currentIndex === total - 1 ? 'Complete' : `${pct}% Complete`;
-            document.getElementById('section-label').textContent = currentLang === 'en' ? stepMeta[currentIndex].label : stepMeta[currentIndex].label;
+            document.getElementById('section-label').textContent = stepMeta[currentIndex].label;
             document.getElementById('section-counter').textContent = `Step ${currentIndex + 1} of ${total}`;
             const mins = stepMeta[currentIndex].mins;
             document.getElementById('remaining-text').textContent = mins > 0 ? `About ${mins} minute${mins === 1 ? '' : 's'} remaining` : 'Ready';
+
+            const activePhase = stepMeta[currentIndex].phase;
+            for (let p = 0; p < 4; p++) {
+                const pill = document.getElementById(`phase-pill-${p}`);
+                if (!pill) continue;
+                pill.classList.remove('active', 'done');
+                if (p < activePhase) pill.classList.add('done');
+                else if (p === activePhase) pill.classList.add('active');
+            }
 
             const back = document.getElementById('btn-back');
             const next = document.getElementById('btn-next');
@@ -1102,7 +1289,7 @@ const qualSteps = [
                         <span>${escapeHtml(group.title)}</span><span class="text-xs text-slate-400">Edit using Back</span>
                     </summary>
                     <div class="divide-y divide-slate-100 border-t border-slate-100">
-                        ${group.items.map(([k,v]) => `<div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-2"><span class="text-xs uppercase tracking-wider font-extrabold text-slate-400">${escapeHtml(k)}</span><span class="text-sm text-slate-700 font-semibold whitespace-pre-wrap">${escapeHtml(v)}</span></div>`).join('')}
+                        ${group.items.map(([k, v]) => `<div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-2"><span class="text-xs uppercase tracking-wider font-extrabold text-slate-400">${escapeHtml(k)}</span><span class="text-sm text-slate-700 font-semibold whitespace-pre-wrap">${escapeHtml(v)}</span></div>`).join('')}
                     </div>
                 </details>`).join('');
         }
@@ -1111,9 +1298,19 @@ const qualSteps = [
             return String(value ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
         }
 
+        function setSyncStep(stepNum, state) {
+            const el = document.getElementById(`sync-step-${stepNum}`);
+            if (!el) return;
+            el.classList.remove('active', 'done');
+            if (state) el.classList.add(state);
+            const prefix = el.querySelector('span');
+            if (prefix) prefix.textContent = state === 'done' ? '✓' : `${stepNum}.`;
+        }
+
         async function submitAssessment() {
             if (submissionInProgress) return;
             submissionInProgress = true;
+            document.getElementById('draft-recovery-banner').classList.add('hidden');
             showStep(sequence.length - 1, false);
             document.getElementById('submission-loading').classList.remove('hidden');
             document.getElementById('submission-success').classList.add('hidden');
@@ -1121,23 +1318,48 @@ const qualSteps = [
             document.getElementById('completion-actions').classList.add('hidden');
 
             const data = saveDataLocally();
-            const safetyFlag = Number.parseInt(data['phq_8'], 10) > 0;
-            document.getElementById('crisis-banner').classList.toggle('hidden', !safetyFlag);
+            delete data._savedAt;
+            delete data._lastStepIndex;
+
+            setSyncStep(1, 'active');
+            setSyncStep(2, '');
+            setSyncStep(3, '');
 
             try {
-                // Compatibility note: this retains the existing Google Apps Script endpoint.
-                // For production, upgrade the backend to a session-based POST endpoint so
-                // clinician authentication is not handled through a URL query parameter.
-                await fetch(SCRIPT_URL, {
+                await new Promise(r => setTimeout(r, 250));
+                setSyncStep(1, 'done');
+                setSyncStep(2, 'active');
+
+                const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'submit_intake',
+                        ...data
+                    })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result?.error) {
+                    throw new Error(result.error);
+                }
+
+                setSyncStep(2, 'done');
+                setSyncStep(3, 'active');
+                await new Promise(r => setTimeout(r, 220));
+                setSyncStep(3, 'done');
+
                 submissionDone = true;
-                buildClientSummary(data);
                 clearDraft();
+
+                const confirmedRef = result.clientId || data['client-id'] || 'Recorded';
+                document.getElementById('closure-ref-code').textContent = confirmedRef;
+                document.getElementById('crisis-banner').classList.toggle('hidden', !Boolean(result.safetyFlag));
+
                 document.getElementById('submission-loading').classList.add('hidden');
                 document.getElementById('submission-success').classList.remove('hidden');
                 document.getElementById('completion-actions').classList.remove('hidden');
@@ -1155,55 +1377,6 @@ const qualSteps = [
             const pct = Math.max(0, Math.min(100, (Number(value) / max) * 100));
             document.getElementById(id).style.width = `${pct}%`;
             document.getElementById(labelId).textContent = label;
-        }
-
-        function extractScore(data, prefix, total) {
-            let score = 0;
-            for (let i = 0; i < total; i++) {
-                const value = Number.parseInt(data[`${prefix}_${i}`], 10);
-                if (Number.isFinite(value)) score += value;
-            }
-            return score;
-        }
-
-        function extractDass(data) {
-            const scores = {1: 0, 2: 0, 3: 0};
-            dass21_qs.forEach((q, i) => {
-                const value = Number.parseInt(data[`das_${i}`], 10);
-                if (Number.isFinite(value)) scores[q.type] += value;
-            });
-            return { d: scores[1] * 2, a: scores[2] * 2, s: scores[3] * 2 };
-        }
-
-        function getPhqSeverity(score) { return score < 5 ? 'Minimal' : score < 10 ? 'Mild' : score < 15 ? 'Moderate' : score < 20 ? 'Moderately severe' : 'Severe'; }
-        function getGadSeverity(score) { return score < 5 ? 'Minimal' : score < 10 ? 'Mild' : score < 15 ? 'Moderate' : 'Severe'; }
-        function getPhqInterpretation(score) {
-            if (score >= 20) return 'PHQ-9 score falls in the severe range. Review symptoms, impairment, risk, and appropriate next steps clinically.';
-            if (score >= 15) return 'PHQ-9 score falls in the moderately severe range. Clinical review and active treatment planning may be appropriate.';
-            if (score >= 10) return 'PHQ-9 score falls in the moderate range. Consider symptom impact, duration, functional impairment, and clinical context.';
-            if (score >= 5) return 'PHQ-9 score falls in the mild range. Consider monitoring, psychoeducation, and clinical context.';
-            return 'PHQ-9 score falls in the minimal range.';
-        }
-        function getGadInterpretation(score) {
-            if (score >= 15) return 'GAD-7 score falls in the severe range and warrants clinical review in context.';
-            if (score >= 10) return 'GAD-7 score falls in the moderate range. Further clinical evaluation may be useful depending on impairment and context.';
-            if (score >= 5) return 'GAD-7 score falls in the mild range. Monitor symptoms and consider relevant coping or preventative strategies.';
-            return 'GAD-7 score falls in the minimal range.';
-        }
-        function getDassSeverity(score, type) {
-            if (type === 'd') { if(score >= 28) return 'Extremely Severe'; if(score >= 21) return 'Severe'; if(score >= 14) return 'Moderate'; if(score >= 10) return 'Mild'; return 'Normal'; }
-            if (type === 'a') { if(score >= 20) return 'Extremely Severe'; if(score >= 15) return 'Severe'; if(score >= 10) return 'Moderate'; if(score >= 8) return 'Mild'; return 'Normal'; }
-            if (type === 's') { if(score >= 34) return 'Extremely Severe'; if(score >= 26) return 'Severe'; if(score >= 19) return 'Moderate'; if(score >= 15) return 'Mild'; return 'Normal'; }
-            return 'Unknown';
-        }
-        function getWemwbsInterpretation(score) {
-            if (score >= 60) return 'WEMWBS score is in the higher well-being range.';
-            if (score >= 43) return 'WEMWBS score is in the mid-range of well-being.';
-            return 'WEMWBS score is in the lower well-being range and should be considered alongside the wider clinical picture.';
-        }
-
-        function hasSafetyFlag(data) {
-            return Number.parseInt(data?.phq_8, 10) > 0;
         }
 
         function renderQualitativeResults(data) {
@@ -1230,345 +1403,133 @@ const qualSteps = [
                 </details>`;
         }
 
-        /*
-         * Motivational-Numerology integration
-         *
-         * The upstream project exposes letter2number, nameInfo(), dateInfo(),
-         * purposeInfo(), and the English meaning object. We use those when the
-         * external source scripts are available, while keeping a local fallback
-         * for the core calculation so the clinician result section still works
-         * if the CDN is temporarily unavailable.
-         */
-        function reduceNumerologyNumber(value) {
-            let number = String(value ?? '');
-            if (!number || number === 'NaN' || number === 'undefined') return number;
-            while (number.length > 1 && number !== '11' && number !== '22') {
-                number = String(number.split('').reduce((sum, digit) => sum + Number(digit), 0));
-            }
-            return number;
-        }
-
-        function localNameNumerology(name) {
-            const map = {
-                A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,
-                J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,
-                S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8
-            };
-            const vowels = new Set(['A','E','I','O','U']);
-            const letters = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-            let all = 0, vowel = 0, consonant = 0;
-            let previousWasConsonant = false;
-
-            for (let i = 0; i < letters.length; i++) {
-                const ch = letters[i];
-                if (!/[A-Z]/.test(ch)) continue;
-                const n = map[ch] || 0;
-                all += n;
-
-                let isVowel = vowels.has(ch);
-                if (ch === 'Y') {
-                    const next = letters[i + 1];
-                    if (previousWasConsonant) isVowel = true;
-                    else if (next && /[A-Z]/.test(next)) isVowel = !vowels.has(next);
-                    else isVowel = true;
-                }
-
-                if (isVowel) vowel += n;
-                else consonant += n;
-                previousWasConsonant = !isVowel;
-            }
-
-            return {
-                character: reduceNumerologyNumber(all),
-                soul: reduceNumerologyNumber(vowel),
-                agenda: reduceNumerologyNumber(consonant)
-            };
-        }
-
-        function parseNumerologyDob(value) {
-            if (!value) return null;
-            const raw = String(value).trim();
-            let year, month, day;
-
-            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-                [year, month, day] = raw.split('-').map(Number);
-            } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
-                [month, day, year] = raw.split('/').map(Number);
-            } else {
-                const d = new Date(raw);
-                if (Number.isNaN(d.getTime())) return null;
-                year = d.getFullYear();
-                month = d.getMonth() + 1;
-                day = d.getDate();
-            }
-
-            if (!year || !month || !day) return null;
-            return { year, month, day };
-        }
-
-        function calculateSallyFaubionNumerology(name, dob) {
-            const date = parseNumerologyDob(dob);
-            if (!date) return null;
-
-            // Prefer the upstream project's own implementation when loaded.
-            if (typeof nameInfo === 'function' && typeof dateInfo === 'function' && typeof purposeInfo === 'function') {
-                const dateReport = dateInfo(String(date.month), String(date.day), String(date.year));
-                const nameReport = nameInfo(String(name || '')) || {};
-                const purpose = purposeInfo(dateReport.destiny?.number, nameReport.character?.number);
-                return {
-                    destiny: dateReport.destiny,
-                    personality: dateReport.personality,
-                    attitude: dateReport.attitude,
-                    character: nameReport.character,
-                    soul: nameReport.soul,
-                    agenda: nameReport.agenda,
-                    purpose
-                };
-            }
-
-            // Local fallback mirrors the project's core calculation rules.
-            const nameNumbers = localNameNumerology(name);
-            const destiny = reduceNumerologyNumber(`${date.month}${date.day}${date.year}`);
-            const attitude = reduceNumerologyNumber(`${date.month}${date.day}`);
-            const personality = String(date.day);
-            const purpose = reduceNumerologyNumber(`${Number(destiny || 0) + Number(nameNumbers.character || 0)}`);
-
-            return {
-                destiny: { number: destiny },
-                character: { number: nameNumbers.character },
-                soul: { number: nameNumbers.soul },
-                agenda: { number: nameNumbers.agenda },
-                personality: { number: personality },
-                attitude: { number: attitude },
-                purpose: { number: purpose }
-            };
-        }
-
-        const numerologyLabels = {
-            destiny: 'Destiny',
-            character: 'Character',
-            soul: 'Soul Urge',
-            agenda: 'Hidden Agenda',
-            personality: 'Personality',
-            attitude: 'Attitude',
-            purpose: 'Divine Purpose'
-        };
-
-        const numerologySourceDescriptions = {
-            destiny: 'Derived from the month, day, and year of birth. In the source method, this number is associated with personal motivations, preferred surroundings, and career aspirations.',
-            character: 'Derived from the letters in the full name. In the source method, this describes public and social qualities.',
-            soul: 'Derived from the vowels in the full name. In the source method, this represents the intuitive or soulful self.',
-            agenda: 'Derived from the consonants in the full name. In the source method, this represents innate or hidden desires.',
-            personality: 'Derived from the day of birth. In the source method, this describes the private or behind-the-scenes self.',
-            attitude: 'Derived from the month and day of birth. In the source method, this concerns how and why a person reacts to circumstances, particularly earlier in life.',
-            purpose: 'Derived from Destiny and Character. In the source method, this represents a later-life or legacy-oriented purpose.'
-        };
-
-        function renderNumerology(data) {
+        function renderServerNumerology(numerology) {
             const container = document.getElementById('numerology-container');
             const summary = document.getElementById('numerology-summary');
             const error = document.getElementById('numerology-error');
             if (!container || !summary || !error) return;
 
-            const name = data['demo-name'] || '';
-            const dob = data['demo-dob'] || '';
-            const numbers = calculateSallyFaubionNumerology(name, dob);
-
             error.classList.add('hidden');
             container.innerHTML = '';
             summary.innerHTML = '';
 
-            if (!numbers) {
-                error.textContent = 'Motivational Numerology could not be calculated because a valid full name and date of birth were not available in this patient record.';
+            if (!numerology || !Array.isArray(numerology.items) || !numerology.items.length) {
+                error.textContent = numerology?.error || 'Motivational Numerology was not available for this record.';
                 error.classList.remove('hidden');
                 return;
             }
 
-            const order = ['destiny','character','soul','agenda','personality','attitude','purpose'];
+            summary.innerHTML = numerology.items.map(item => `
+                <div class="numerology-number-card">
+                    <p class="text-[10px] uppercase tracking-wider font-extrabold text-amber-700/70">${escapeHtml(item.label)}</p>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="number">${escapeHtml(item.number)}</span>
+                        ${item.master ? '<span class="master-badge">Master</span>' : ''}
+                    </div>
+                </div>`).join('');
 
-            summary.innerHTML = order.map(key => {
-                const number = numbers[key]?.number ?? numbers[key]?.num ?? '?';
-                const master = String(number) === '11' || String(number) === '22';
-                return `
-                    <div class="numerology-number-card">\n                        <p class="text-[10px] uppercase tracking-wider font-extrabold text-amber-700/70">${escapeHtml(numerologyLabels[key])}</p>\n                        <div class="flex items-center gap-2 mt-2">\n                            <span class="number">${escapeHtml(number)}</span>\n                            ${master ? '<span class="master-badge">Master</span>' : ''}\n                        </div>\n                    </div>`;
-            }).join('');
-
-            container.innerHTML = order.map(key => {
-                const report = numbers[key] || {};
-                const number = report.number ?? report.num ?? '?';
-                const sourceMeaning = typeof meaning !== 'undefined' && meaning[key] ? meaning[key][number] : '';
-                const description = typeof meaning !== 'undefined' && meaning[key] ? meaning[key].description : numerologySourceDescriptions[key];
-                const interpretation = sourceMeaning || 'The source interpretation is unavailable while the calculation is still displayed.';
-                const master = String(number) === '11' || String(number) === '22';
-
-                return `
-                    <article class="rounded-2xl border border-amber-100 bg-amber-50/50 p-5">\n                        <div class="flex items-start justify-between gap-4">\n                            <div>\n                                <p class="text-[10px] uppercase tracking-wider font-extrabold text-amber-700/60">Motivational-Numerology</p>\n                                <h4 class="text-lg font-extrabold text-slate-800 mt-1">${escapeHtml(numerologyLabels[key])}</h4>\n                            </div>\n                            <div class="flex items-center gap-2">\n                                <span class="number">${escapeHtml(number)}</span>\n                                ${master ? '<span class="master-badge">Master</span>' : ''}\n                            </div>\n                        </div>\n                        <p class="text-xs uppercase tracking-wider font-extrabold text-amber-700/60 mt-5 mb-1">What this number represents</p>\n                        <p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(description || numerologySourceDescriptions[key])}</p>\n                        <p class="text-xs uppercase tracking-wider font-extrabold text-amber-700/60 mt-4 mb-1">Source interpretation</p>\n                        <p class="text-sm text-slate-800 leading-relaxed bg-white border border-amber-100 rounded-xl p-4">${escapeHtml(interpretation)}</p>\n                    </article>`;
-            }).join('');
-        }
-
-        const analysisThemeCatalog = [
-            { id:'emotional-burden', label:'Emotional burden', keywords:['overwhelmed','overwhelm','heavy','burden','sad','depressed','down','mayoos','udaas','cry','crying','lonely','loneliness','emotion','emotional','hopeless','na umeed','na-umeed'], domains:['Internal Thoughts','Daily Routine','Physical Well-being'] },
-            { id:'anxiety-worry', label:'Worry and anxiety', keywords:['worry','worried','worrying','anxious','anxiety','panic','fear','afraid','ghabrahat','tension','fikr','fikar','bechain','bechaini'], domains:['Internal Thoughts','Physical Well-being','Daily Routine'] },
-            { id:'sleep-energy', label:'Sleep, energy and physical strain', keywords:['sleep','neend','tired','fatigue','energy','thakan','thaka','appetite','bhook','headache','body','jism','khichao'], domains:['Physical Well-being'] },
-            { id:'functional-impact', label:'Functional disruption', keywords:['work','study','studies','college','school','routine','productive','productivity','concentrate','focus','avoid','avoiding','daily','kaam','padhai','parhai'], domains:['Daily Routine'] },
-            { id:'relational-pressure', label:'Interpersonal and family pressure', keywords:['family','parents','mother','father','husband','wife','brother','sister','friend','friends','relationship','marriage','expectation','pressure','ghar','khandan','log','dost'], domains:['Family Context','Daily Routine'] },
-            { id:'life-transition', label:'Life change and uncertainty', keywords:['change','changed','transition','move','moved','job','financial','money','loss','separation','divorce','new','future','recent','waqiya','mali','tabdeeli','mushkil'], domains:['Life Changes'] },
-            { id:'meaning-faith', label:'Meaning, faith and coping', keywords:['faith','prayer','prayers','religion','allah','dua','namaz','quran','spiritual','meaning','purpose','hope','trust','coping','cope','ibadat','imaan','aqeedah'], domains:['Meaning & Faith','Internal Thoughts'] },
-            { id:'self-worth-agency', label:'Self-worth and agency', keywords:['worth','worthless','failure','fail','guilt','shame','self','confidence','confident','control','powerless','helpless','value','qeemat','ahmiyat','aitmad','faisla','decision'], domains:['Internal Thoughts','Daily Routine'] },
-            { id:'social-withdrawal', label:'Social withdrawal or disconnection', keywords:['avoid social','avoid friends','isolated','isolation','alone','lonely','withdraw','withdrawal','people','social','friends','door','doori','milna julna'], domains:['Daily Routine','Family Context'] },
-            { id:'coping-resources', label:'Coping and protective resources', keywords:['support','help','cope','coping','exercise','walk','family support','friend support','prayer','faith','hope','therapy','supportive','madad'], domains:['Meaning & Faith','Family Context','Daily Routine'] }
-        ];
-
-        function normalizeAnalysisText(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
-        function collectQualitativeResponses(data) {
-            const responses = [];
-            qualSteps.forEach(s => [1,2].forEach(qn => { const text = normalizeAnalysisText(data[`q${s.id}-${qn}`]); if (text) responses.push({ domain:s.en.title, question:`Question ${qn}`, text }); }));
-            return responses;
-        }
-        function keywordHits(text, keywords) { const lower = text.toLowerCase(); return keywords.filter(k => lower.includes(k.toLowerCase())); }
-        function analyzeQualitativeThemes(data) {
-            const responses = collectQualitativeResponses(data);
-            const themes = analysisThemeCatalog.map(theme => {
-                const evidence = [];
-                const hitTerms = new Set();
-                responses.forEach(r => { const hits = keywordHits(r.text, theme.keywords); if (hits.length) { hits.forEach(h => hitTerms.add(h)); evidence.push({...r, hits}); } });
-                const domains = [...new Set(evidence.map(e => e.domain))];
-                const mentions = evidence.length;
-                const confidence = mentions >= 3 || domains.length >= 2 ? 'Higher' : mentions === 2 ? 'Moderate' : 'Tentative';
-                return {...theme, evidence, domains, mentions, confidence, hitTerms:[...hitTerms]};
-            }).filter(t => t.mentions > 0);
-            const rank = {Higher:3, Moderate:2, Tentative:1};
-            themes.sort((a,b) => (rank[b.confidence]-rank[a.confidence]) || (b.mentions-a.mentions));
-            return {responses, themes};
-        }
-        function buildPhenomenologicalSynthesis(data, themes) {
-            const joined = collectQualitativeResponses(data).map(r => r.text).join(' ').toLowerCase();
-            const has = (...terms) => terms.some(t => joined.includes(t));
-            return [
-                {label:'Lived experience', text: themes.length ? `The narrative emphasizes ${themes.slice(0,3).map(t => t.label.toLowerCase()).join(', ')}.` : 'The available narrative is too limited to identify a stable lived-experience pattern.'},
-                {label:'Meaning-making', text: has('why','cause','reason','meaning','purpose','faith','allah','dua','namaz','aqeedah') ? 'The person appears to be making sense of the situation through perceived causes, beliefs, meaning, or explanations.' : 'Meaning-making is not clearly developed in the available responses and may benefit from further exploration.'},
-                {label:'Sense of self and agency', text: has('control','worth','worthless','confidence','confident','failure','decision','faisla','qeemat','ahmiyat') ? 'The responses contain material relevant to self-evaluation, confidence, perceived control, or agency.' : 'There is insufficient narrative evidence to characterize self-evaluation or agency with confidence.'},
-                {label:'Relational world', text: has('family','parents','friend','relationship','husband','wife','ghar','khandan','dost') ? 'Relationships and social expectations appear relevant to the person’s current experience.' : 'Relational context is present only minimally in the available narrative.'},
-                {label:'Future orientation', text: has('future','hope','hopeless','change','purpose','next','mustaqbil','umeed') ? 'The narrative contains material about hope, uncertainty, desired change, or the future.' : 'Future orientation is not sufficiently described to support a clear interpretation.'}
-            ];
-        }
-        function getQuantitativeProfile(data) {
-            const phq = extractScore(data,'phq',9), gad = extractScore(data,'gad',7), dass = extractDass(data), wem = extractScore(data,'wem',14);
-            const signals = [
-                {id:'mood',label:'Depressive symptom burden',severity:getPhqSeverity(phq),score:phq,high:phq>=10},
-                {id:'anxiety',label:'Anxiety symptom burden',severity:getGadSeverity(gad),score:gad,high:gad>=10},
-                {id:'stress',label:'Stress burden',severity:getDassSeverity(dass.s,'s'),score:dass.s,high:dass.s>=19},
-                {id:'wellbeing',label:'Well-being',severity:wem>=60?'Higher':wem>=43?'Mid-range':'Lower',score:wem,high:wem<43}
-            ];
-            return {phq,gad,dass,wem,signals};
-        }
-        const themeToQuantSignals = {
-            'emotional-burden':['mood','wellbeing'],'anxiety-worry':['anxiety','stress'],'sleep-energy':['mood','wellbeing','stress'],
-            'functional-impact':['mood','anxiety','wellbeing'],'relational-pressure':['mood','anxiety','stress'],'life-transition':['mood','anxiety','stress'],
-            'meaning-faith':['wellbeing'],'self-worth-agency':['mood','wellbeing'],'social-withdrawal':['mood','anxiety','wellbeing'],'coping-resources':['wellbeing']
-        };
-        function buildMixedMethodIntegration(analysis, quantitative) {
-            return analysis.themes.slice(0,6).map(theme => {
-                const linked = (themeToQuantSignals[theme.id] || []).map(id => quantitative.signals.find(s=>s.id===id)).filter(Boolean);
-                const elevated = linked.filter(s=>s.high);
-                let type='complementary', relationship='Complementary: the narrative adds context that the screening measures do not directly capture.';
-                if (elevated.length && elevated.length >= Math.max(1,Math.ceil(linked.length/2))) { type='convergent'; relationship='Convergent: the narrative pattern broadly aligns with elevated screening signals.'; }
-                else if (linked.length && elevated.length===0) { type='divergent'; relationship='Divergent or not aligned: the narrative pattern is present without a corresponding elevated screening signal.'; }
-                return {theme,linked,type,relationship};
-            });
-        }
-        function buildClinicalExploration(analysis, quantitative) {
-            const questions=[];
-            const ids=new Set(analysis.themes.slice(0,5).map(t=>t.id));
-            if (hasSafetyFlag(analysis.data)) questions.push('Clarify current safety, intent, access to means, protective factors, and immediate support using your established risk-assessment protocol.');
-            if (ids.has('emotional-burden') || quantitative.phq>=10) questions.push('Explore the onset, duration, variability, and functional impact of the reported low mood or emotional burden.');
-            if (ids.has('anxiety-worry') || quantitative.gad>=10) questions.push('Clarify the main worry themes, triggers, bodily sensations, avoidance patterns, and perceived controllability of worry.');
-            if (ids.has('sleep-energy')) questions.push('Explore sleep pattern, fatigue, appetite, daily rhythm, medical contributors, and the relationship between physical and emotional strain.');
-            if (ids.has('relational-pressure')) questions.push('Clarify family or interpersonal expectations, sources of support, conflict, boundaries, and how relationships shape the current experience.');
-            if (ids.has('life-transition')) questions.push('Explore the meaning of recent life changes, losses, financial or role pressures, and the timeline of symptom escalation.');
-            if (ids.has('meaning-faith')) questions.push('Explore how beliefs, faith, meaning, or spiritual practices function as sources of coping, struggle, hope, or conflict.');
-            if (ids.has('self-worth-agency')) questions.push('Explore self-critical beliefs, confidence, perceived control, decision-making, and situations in which agency feels stronger or weaker.');
-            if (ids.has('coping-resources') || quantitative.wem>=43) questions.push('Identify existing coping strategies and protective resources that can be strengthened during treatment planning.');
-            return [...new Set(questions)].slice(0,6);
-        }
-        function renderIntegratedAnalysis(data) {
-            const analysis=analyzeQualitativeThemes(data); analysis.data=data;
-            const quantitative=getQuantitativeProfile(data), themes=analysis.themes;
-            const synthesis=buildPhenomenologicalSynthesis(data,themes), mixed=buildMixedMethodIntegration(analysis,quantitative), questions=buildClinicalExploration(analysis,quantitative);
-            const evidenceCount=analysis.responses.length;
-            document.getElementById('analysis-confidence').textContent=`Confidence: ${evidenceCount>=8?'Higher':evidenceCount>=4?'Moderate':'Limited'}`;
-            const snapshotItems=[...themes.slice(0,4).map(t=>({title:t.label,body:`${t.confidence} qualitative signal across ${t.domains.join(', ')}.`,tag:'Theme'})),...quantitative.signals.filter(s=>s.high).slice(0,2).map(s=>({title:s.label,body:`${s.severity} screening range, score ${s.score}.`,tag:'Quantitative'}))].slice(0,6);
-            const snapshot=document.getElementById('integrated-snapshot');
-            snapshot.innerHTML=(snapshotItems.length?snapshotItems:[{title:'No dominant pattern identified',body:'The available response set does not support a stable integrated pattern. Clinical interview remains important.',tag:'Unresolved'}]).map(item=>`<article class="analysis-card"><span class="analysis-tag">${escapeHtml(item.tag)}</span><h5 class="font-extrabold text-slate-800 mt-2">${escapeHtml(item.title)}</h5><p class="text-sm text-slate-600 leading-relaxed mt-1">${escapeHtml(item.body)}</p></article>`).join('');
-            document.getElementById('ipa-synthesis').innerHTML=synthesis.map(item=>`<article class="analysis-card"><span class="analysis-tag">${escapeHtml(item.label)}</span><p class="text-sm text-slate-700 leading-relaxed mt-3">${escapeHtml(item.text)}</p></article>`).join('');
-            const themeRoot=document.getElementById('theme-analysis');
-            themeRoot.innerHTML=themes.length?themes.slice(0,6).map(theme=>{const ev=theme.evidence.slice(0,2).map(e=>`${e.domain}: “${escapeHtml(e.text.slice(0,180))}${e.text.length>180?'…':''}”`).join('<br>');return `<article class="analysis-card"><div class="flex items-start justify-between gap-3"><div><span class="analysis-tag">${escapeHtml(theme.confidence)} confidence</span><h5 class="font-extrabold text-slate-800 mt-2">${escapeHtml(theme.label)}</h5></div><span class="text-xs font-extrabold text-slate-400">${theme.mentions} signal${theme.mentions===1?'':'s'}</span></div><p class="text-xs text-slate-500 mt-2">Domains: ${escapeHtml(theme.domains.join(', '))}</p><div class="evidence">${ev}</div></article>`}).join(''):'<div class="analysis-card"><p class="text-sm text-slate-500">No candidate themes were identified by the current structured coding lexicon.</p></div>';
-            const mixedRoot=document.getElementById('mixed-method-grid');
-            mixedRoot.innerHTML=mixed.length?mixed.map(item=>{const q=escapeHtml(item.linked.map(s=>`${s.label}: ${s.severity} (${s.score})`).join(' · '));return `<article class="analysis-card ${item.type}"><div class="flex items-center justify-between gap-2"><h5 class="font-extrabold text-slate-800">${escapeHtml(item.theme.label)}</h5><span class="analysis-tag">${escapeHtml(item.type)}</span></div><p class="text-sm text-slate-700 leading-relaxed mt-2">${escapeHtml(item.relationship)}</p><p class="text-xs text-slate-500 mt-2">${q}</p></article>`}).join(''):'<div class="analysis-card unresolved"><p class="text-sm text-slate-500">No stable mixed-method relationships identified.</p></div>';
-            document.getElementById('clinical-exploration').innerHTML=questions.length?questions.map((q,i)=>`<article class="analysis-card"><div class="flex items-start gap-3"><span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-extrabold shrink-0">${i+1}</span><p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(q)}</p></div></article>`).join(''):'<div class="analysis-card"><p class="text-sm text-slate-500">No specific interview prompts were generated from the current pattern set.</p></div>';
-        }
-        function buildClientSummary(data) {
-            const q=getQuantitativeProfile(data), signals=[];
-            if(q.phq>=10) signals.push({title:'Mood',text:`Your screening responses suggest some symptoms related to low mood (${q.phq}/27).`}); else if(q.phq>=5) signals.push({title:'Mood',text:`Your screening responses show some symptoms related to mood (${q.phq}/27).`});
-            if(q.gad>=10) signals.push({title:'Worry and anxiety',text:`Your responses suggest some symptoms related to worry or anxiety (${q.gad}/21).`}); else if(q.gad>=5) signals.push({title:'Worry and anxiety',text:`Your responses show some symptoms related to worry or anxiety (${q.gad}/21).`});
-            if(q.dass.s>=19) signals.push({title:'Stress',text:'Your responses indicate that stress may currently deserve attention.'});
-            if(q.wem<43) signals.push({title:'Well-being',text:'Your well-being responses suggest that additional support may be useful right now.'});
-            if(!signals.length) signals.push({title:'Overall',text:'Your responses do not show a strong elevation on the screening measures used here.'});
-            document.getElementById('client-summary-overview').textContent=signals.length>=2?'Your assessment suggests some areas of emotional or psychological strain that may be worth discussing further. These results are an initial screening snapshot, not a diagnosis.':'Your assessment provides an initial snapshot of your current well-being. A fuller understanding depends on context and professional discussion, not scores alone.';
-            document.getElementById('client-summary-signals').innerHTML=signals.slice(0,4).map(item=>`<div class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><p class="text-sm font-extrabold text-slate-800">${escapeHtml(item.title)}</p><p class="text-sm text-slate-600 leading-relaxed mt-1">${escapeHtml(item.text)}</p></div>`).join('');
-            document.getElementById('client-result-summary').classList.remove('hidden');
+            container.innerHTML = numerology.items.map(item => `
+                <article class="rounded-2xl border border-amber-100 bg-amber-50/50 p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider font-extrabold text-amber-700/60">Motivational-Numerology</p>
+                            <h4 class="text-lg font-extrabold text-slate-800 mt-1">${escapeHtml(item.label)}</h4>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="number">${escapeHtml(item.number)}</span>
+                            ${item.master ? '<span class="master-badge">Master</span>' : ''}
+                        </div>
+                    </div>
+                    <p class="text-xs uppercase tracking-wider font-extrabold text-amber-700/60 mt-5 mb-1">What this number represents</p>
+                    <p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(item.description || '')}</p>
+                    <p class="text-xs uppercase tracking-wider font-extrabold text-amber-700/60 mt-4 mb-1">Source interpretation</p>
+                    <p class="text-sm text-slate-800 leading-relaxed bg-white border border-amber-100 rounded-xl p-4">${escapeHtml(item.interpretation || '')}</p>
+                </article>`).join('');
         }
 
-        function generateDashboard(clientData) {
-            activePatientData = clientData || {};
+        function renderServerIntegratedAnalysis(analysis) {
+            const conf = analysis?.confidence || 'Limited';
+            document.getElementById('analysis-confidence').textContent = `Confidence: ${conf}`;
+
+            const snapshotItems = Array.isArray(analysis?.snapshot) ? analysis.snapshot : [];
+            document.getElementById('integrated-snapshot').innerHTML = (snapshotItems.length
+                ? snapshotItems
+                : [{ title: 'Backend analysis pending', body: 'Ensure the updated server-side Code.gs is deployed to populate server-computed themes.', tag: 'Note' }]
+            ).map(item => `<article class="analysis-card"><span class="analysis-tag">${escapeHtml(item.tag)}</span><h5 class="font-extrabold text-slate-800 mt-2">${escapeHtml(item.title)}</h5><p class="text-sm text-slate-600 leading-relaxed mt-1">${escapeHtml(item.body)}</p></article>`).join('');
+
+            const synthesis = Array.isArray(analysis?.ipaSynthesis) ? analysis.ipaSynthesis : [];
+            document.getElementById('ipa-synthesis').innerHTML = synthesis.map(item => `<article class="analysis-card"><span class="analysis-tag">${escapeHtml(item.label)}</span><p class="text-sm text-slate-700 leading-relaxed mt-3">${escapeHtml(item.text)}</p></article>`).join('');
+
+            const themes = Array.isArray(analysis?.themes) ? analysis.themes : [];
+            document.getElementById('theme-analysis').innerHTML = themes.length
+                ? themes.map(theme => {
+                    const ev = (theme.evidence || []).map(e => `${escapeHtml(e.domain)}: "${escapeHtml(e.excerpt)}"`).join('<br>');
+                    return `<article class="analysis-card"><div class="flex items-start justify-between gap-3"><div><span class="analysis-tag">${escapeHtml(theme.confidence)} confidence</span><h5 class="font-extrabold text-slate-800 mt-2">${escapeHtml(theme.label)}</h5></div><span class="text-xs font-extrabold text-slate-400">${theme.mentions} signal${theme.mentions === 1 ? '' : 's'}</span></div><p class="text-xs text-slate-500 mt-2">Domains: ${escapeHtml((theme.domains || []).join(', '))}</p><div class="evidence">${ev}</div></article>`;
+                }).join('')
+                : '<div class="analysis-card"><p class="text-sm text-slate-500">No candidate themes identified by the server coding lexicon.</p></div>';
+
+            const mixed = Array.isArray(analysis?.mixedMethod) ? analysis.mixedMethod : [];
+            document.getElementById('mixed-method-grid').innerHTML = mixed.length
+                ? mixed.map(item => `<article class="analysis-card ${escapeHtml(item.type || 'complementary')}"><div class="flex items-center justify-between gap-2"><h5 class="font-extrabold text-slate-800">${escapeHtml(item.themeLabel)}</h5><span class="analysis-tag">${escapeHtml(item.type)}</span></div><p class="text-sm text-slate-700 leading-relaxed mt-2">${escapeHtml(item.relationship)}</p><p class="text-xs text-slate-500 mt-2">${escapeHtml(item.linkedSummary || '')}</p></article>`).join('')
+                : '<div class="analysis-card unresolved"><p class="text-sm text-slate-500">No mixed-method relationships returned.</p></div>';
+
+            const questions = Array.isArray(analysis?.explorationQuestions) ? analysis.explorationQuestions : [];
+            document.getElementById('clinical-exploration').innerHTML = questions.length
+                ? questions.map((q, i) => `<article class="analysis-card"><div class="flex items-start gap-3"><span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-extrabold shrink-0">${i + 1}</span><p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(q)}</p></div></article>`).join('')
+                : '<div class="analysis-card"><p class="text-sm text-slate-500">No specific interview prompts generated.</p></div>';
+        }
+
+        function generateDashboard(record) {
+            activePatientRecord = record || {};
+            const clientData = record.data || {};
+            const scores = record.scores || {};
+
             portalMode = true;
             document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
             document.getElementById('step-results').classList.add('active');
             document.getElementById('header-bar').classList.remove('hidden');
+            document.getElementById('client-progress-header').classList.add('hidden');
             document.getElementById('nav-footer').classList.add('hidden');
-            document.getElementById('progress-bar').style.width = '100%';
-            document.getElementById('section-label').textContent = 'Clinician portal';
-            document.getElementById('section-counter').textContent = 'Patient record';
-            document.getElementById('progress-text').textContent = '';
-            document.getElementById('remaining-text').textContent = '';
 
-            const name = clientData['demo-name'] || 'Subject';
-            const date = clientData['submittedAt'] || clientData['date'] || '';
+            const name = record.meta?.name || clientData['demo-name'] || 'Subject';
+            const date = record.meta?.date || clientData['submittedAt'] || '';
             document.getElementById('patient-summary').textContent = `Data for: ${name}${date ? ` · ${new Date(date).toLocaleString()}` : ''}`;
 
-            const phq = extractScore(clientData, 'phq', 9);
-            const gad = extractScore(clientData, 'gad', 7);
-            const dass = extractDass(clientData);
-            const wem = extractScore(clientData, 'wem', 14);
+            const phq = Number(scores.phq ?? 0);
+            const gad = Number(scores.gad ?? 0);
+            const dassD = Number(scores.dassD ?? 0);
+            const dassA = Number(scores.dassA ?? 0);
+            const dassS = Number(scores.dassS ?? 0);
+            const wem = Number(scores.wem ?? 0);
 
-            const phqSev = getPhqSeverity(phq);
-            const gadSev = getGadSeverity(gad);
             document.getElementById('res-phq9').textContent = `${phq}/27`;
-            document.getElementById('sev-phq9').textContent = phqSev;
+            document.getElementById('sev-phq9').textContent = scores.phqSeverity || 'Minimal';
             document.getElementById('res-gad7').textContent = `${gad}/21`;
-            document.getElementById('sev-gad7').textContent = gadSev;
-            document.getElementById('res-dass-summary').textContent = `${dass.d} / ${dass.a} / ${dass.s}`;
+            document.getElementById('sev-gad7').textContent = scores.gadSeverity || 'Minimal';
+            document.getElementById('res-dass-summary').textContent = `${dassD} / ${dassA} / ${dassS}`;
             document.getElementById('res-wemwbs').textContent = `${wem}/70`;
 
-            setResultBar('bar-phq', phq, 27, 'bar-phq-label', `${phq}/27 · ${phqSev}`);
-            setResultBar('bar-gad', gad, 21, 'bar-gad-label', `${gad}/21 · ${gadSev}`);
-            setResultBar('bar-dass-d', dass.d, 42, 'bar-dass-d-label', `${dass.d}/42 · ${getDassSeverity(dass.d,'d')}`);
-            setResultBar('bar-dass-a', dass.a, 42, 'bar-dass-a-label', `${dass.a}/42 · ${getDassSeverity(dass.a,'a')}`);
-            setResultBar('bar-dass-s', dass.s, 42, 'bar-dass-s-label', `${dass.s}/42 · ${getDassSeverity(dass.s,'s')}`);
+            setResultBar('bar-phq', phq, 27, 'bar-phq-label', `${phq}/27 · ${scores.phqSeverity || ''}`);
+            setResultBar('bar-gad', gad, 21, 'bar-gad-label', `${gad}/21 · ${scores.gadSeverity || ''}`);
+            setResultBar('bar-dass-d', dassD, 42, 'bar-dass-d-label', `${dassD}/42 · ${scores.dassDSeverity || ''}`);
+            setResultBar('bar-dass-a', dassA, 42, 'bar-dass-a-label', `${dassA}/42 · ${scores.dassASeverity || ''}`);
+            setResultBar('bar-dass-s', dassS, 42, 'bar-dass-s-label', `${dassS}/42 · ${scores.dassSSeverity || ''}`);
             setResultBar('bar-wem', wem, 70, 'bar-wem-label', `${wem}/70 · well-being`);
 
-            document.getElementById('interp-phq9').textContent = getPhqInterpretation(phq);
-            document.getElementById('interp-gad7').textContent = getGadInterpretation(gad);
-            document.getElementById('interp-dass').textContent = `DASS-21: ${getDassSeverity(dass.d,'d').toLowerCase()} depression, ${getDassSeverity(dass.a,'a').toLowerCase()} anxiety, and ${getDassSeverity(dass.s,'s').toLowerCase()} stress.`;
-            document.getElementById('interp-wemwbs').textContent = getWemwbsInterpretation(wem);
+            document.getElementById('interp-phq9').textContent = scores.phqInterpretation || '';
+            document.getElementById('interp-gad7').textContent = scores.gadInterpretation || '';
+            document.getElementById('interp-dass').textContent = scores.dassInterpretation || '';
+            document.getElementById('interp-wemwbs').textContent = scores.wemInterpretation || '';
 
-            const safety = hasSafetyFlag(clientData);
+            const safety = Boolean(record.meta?.safetyFlag);
             document.getElementById('clinician-safety-alert').classList.toggle('hidden', !safety);
-            document.getElementById('clinician-safety-text').textContent = safety ? 'PHQ-9 item 9 was endorsed. Review risk, intent, means, protective factors, and immediate safety in line with your clinical protocol.' : '';
+            document.getElementById('clinician-safety-text').textContent = safety
+                ? 'PHQ-9 item 9 was endorsed. Review risk, intent, means, protective factors, and immediate safety in line with your clinical protocol.'
+                : '';
 
-            renderIntegratedAnalysis(clientData);
+            renderServerIntegratedAnalysis(record.analysis);
             renderQualitativeResults(clientData);
-            renderNumerology(clientData);
+            renderServerNumerology(record.numerology);
 
             const ctx = document.getElementById('resultsChart').getContext('2d');
             if (resultsChartInstance) resultsChartInstance.destroy();
@@ -1578,7 +1539,7 @@ const qualSteps = [
                     labels: ['PHQ-9', 'GAD-7', 'DASS-D', 'DASS-A', 'DASS-S', 'WEMWBS'],
                     datasets: [{
                         label: 'Score',
-                        data: [phq, gad, dass.d, dass.a, dass.s, wem],
+                        data: [phq, gad, dassD, dassA, dassS, wem],
                         backgroundColor: 'rgba(71,147,117,.18)',
                         borderColor: '#479375',
                         borderWidth: 1.5,
@@ -1599,96 +1560,126 @@ const qualSteps = [
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function copyClinicianNoteSummary() {
+            if (!activePatientRecord) return;
+            const d = activePatientRecord.data || {};
+            const s = activePatientRecord.scores || {};
+            const a = activePatientRecord.analysis || {};
+            const themes = (a.themes || []).slice(0, 4).map(t => `- ${t.label} (${t.confidence})`).join('\n') || '- None flagged';
+            const qs = (a.explorationQuestions || []).slice(0, 4).map((q, i) => `${i + 1}. ${q}`).join('\n') || 'None';
+
+            const note = [
+                `CLINICAL INTAKE SUMMARY (${activePatientRecord.meta?.clientId || d['client-id'] || ''})`,
+                `Client: ${d['demo-name'] || 'Unnamed'} | DOB: ${d['demo-dob'] || 'N/A'} | Gender: ${d['demo-gender'] || 'N/A'}`,
+                `Assessment: ${d['assessment-type'] || 'Intake'} (${d['treatment-phase'] || ''})`,
+                `Safety Flag: ${activePatientRecord.meta?.safetyFlag ? 'YES - PHQ-9 Item 9 Endorsed' : 'No'}`,
+                ``,
+                `SCREENING SCORES:`,
+                `- PHQ-9: ${s.phq ?? 0}/27 (${s.phqSeverity || ''})`,
+                `- GAD-7: ${s.gad ?? 0}/21 (${s.gadSeverity || ''})`,
+                `- DASS-21: D=${s.dassD ?? 0} (${s.dassDSeverity || ''}), A=${s.dassA ?? 0} (${s.dassASeverity || ''}), S=${s.dassS ?? 0} (${s.dassSSeverity || ''})`,
+                `- WEMWBS: ${s.wem ?? 0}/70`,
+                ``,
+                `KEY QUALITATIVE THEMES:`,
+                themes,
+                ``,
+                `EXPLORATION PROMPTS:`,
+                qs
+            ].join('\n');
+
+            navigator.clipboard?.writeText(note);
+            showToast('Clinical summary copied to clipboard.', 'success');
+        }
+
         function goBackToPatients() {
             if (!clinicianAuthenticated) return;
             portalMode = true;
             document.getElementById('step-results').classList.remove('active');
+            document.getElementById('step-client-journey').classList.remove('active');
             document.getElementById('step-admin-list').classList.add('active');
             document.getElementById('header-bar').classList.remove('hidden');
+            document.getElementById('client-progress-header').classList.add('hidden');
             document.getElementById('nav-footer').classList.add('hidden');
-            document.getElementById('section-label').textContent = 'Clinician portal';
-            document.getElementById('section-counter').textContent = 'Patient files';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function normalizeRecord(record) {
-            const raw = typeof record.raw === 'string' ? safeJsonParse(record.raw) : record.raw;
-            const data = raw && typeof raw === 'object' ? raw : {};
-            return { meta: record, data };
-        }
-
-        function recordNeedsReview(data) {
-            const phq = extractScore(data, 'phq', 9);
-            const gad = extractScore(data, 'gad', 7);
-            const dass = extractDass(data);
-            return hasSafetyFlag(data) || phq >= 10 || gad >= 10 || dass.d >= 14 || dass.a >= 10 || dass.s >= 19;
-        }
-
         function getRecordDate(record) {
-            const raw = record?.meta?.date || record?.data?.submittedAt || record?.data?.date || '';
+            const raw = record?.meta?.date || record?.data?.submittedAt || '';
             const d = new Date(raw);
             return Number.isNaN(d.getTime()) ? new Date(0) : d;
-        }
-
-        function groupRecordsByClient(records) {
-            const groups = new Map();
-            records.map(normalizeRecord).forEach(({meta, data}) => {
-                const clientId = meta.clientId || data['client-id'] || 'UNKNOWN';
-                if (!groups.has(clientId)) groups.set(clientId, []);
-                groups.get(clientId).push({meta, data});
-            });
-            groups.forEach(group => group.sort((a,b) => getRecordDate(a) - getRecordDate(b)));
-            return [...groups.entries()].map(([clientId, records]) => ({clientId, records})).sort((a,b) => getRecordDate(b.records.at(-1)) - getRecordDate(a.records.at(-1)));
         }
 
         function renderPatientList() {
             const search = document.getElementById('patient-search').value.trim().toLowerCase();
             const filter = document.getElementById('patient-filter').value;
             const container = document.getElementById('client-list-container');
-            const groups = groupRecordsByClient(clinicianRecords).filter(group => {
-                const latest = group.records.at(-1) || {meta:{}, data:{}};
-                const name = String(latest.meta.name || latest.data['demo-name'] || '').toLowerCase();
-                const contact = String(latest.meta.contact || latest.data['demo-contact'] || '').toLowerCase();
-                const safety = group.records.some(r => hasSafetyFlag(r.data));
-                const review = group.records.some(r => recordNeedsReview(r.data));
-                const matchesSearch = !search || name.includes(search) || contact.includes(search) || group.clientId.toLowerCase().includes(search);
-                const matchesFilter = filter === 'all' || (filter === 'review' && review) || (filter === 'safety' && safety);
+
+            const filtered = clinicianRecords.filter(group => {
+                const latest = group.records?.at(-1) || { meta: {}, data: {} };
+                const name = String(latest.meta?.name || latest.data?.['demo-name'] || '').toLowerCase();
+                const contact = String(latest.meta?.contact || latest.data?.['demo-contact'] || '').toLowerCase();
+                const clientId = String(group.clientId || '').toLowerCase();
+                const safety = Boolean(group.safetyFlag);
+                const review = Boolean(group.needsReview);
+
+                const matchesSearch = !search || name.includes(search) || contact.includes(search) || clientId.includes(search);
+                const matchesFilter =
+                    filter === 'all' ||
+                    (filter === 'safety' && safety) ||
+                    (filter === 'review' && review) ||
+                    (filter === 'routine' && !safety && !review);
+
                 return matchesSearch && matchesFilter;
             });
 
-            if (!groups.length) {
+            if (!filtered.length) {
                 container.innerHTML = '<div class="text-center py-16 text-slate-400 font-semibold">No clients match your filters.</div>';
                 return;
             }
 
             container.innerHTML = '';
-            groups.forEach(group => {
-                const latest = group.records.at(-1) || {meta:{}, data:{}};
+            filtered.forEach(group => {
+                const latest = group.records?.at(-1) || { meta: {}, data: {}, scores: {} };
                 const card = document.createElement('button');
                 card.type = 'button';
                 card.className = 'focus-ring admin-card w-full text-left bg-white p-5 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4';
 
                 const left = document.createElement('div');
-                const name = document.createElement('h3');
-                name.className = 'font-extrabold text-slate-800 text-lg';
-                name.textContent = latest.meta.name || latest.data['demo-name'] || 'Unnamed patient';
+                const titleRow = document.createElement('div');
+                titleRow.className = 'flex flex-wrap items-center gap-2';
+
+                const nameEl = document.createElement('h3');
+                nameEl.className = 'font-extrabold text-slate-800 text-lg';
+                nameEl.textContent = latest.meta?.name || latest.data?.['demo-name'] || 'Unnamed patient';
+                titleRow.appendChild(nameEl);
+
+                if (group.safetyFlag) {
+                    titleRow.insertAdjacentHTML('beforeend', '<span class="text-xs font-extrabold text-red-700 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">Safety review</span>');
+                } else if (group.needsReview) {
+                    titleRow.insertAdjacentHTML('beforeend', '<span class="text-xs font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">Needs review</span>');
+                }
+
                 const metaLine = document.createElement('p');
                 metaLine.className = 'text-sm text-slate-500 mt-1';
                 metaLine.textContent = `${group.clientId} · ${group.records.length} assessment${group.records.length === 1 ? '' : 's'}`;
-                left.append(name, metaLine);
+
+                const scoresLine = document.createElement('div');
+                scoresLine.className = 'flex flex-wrap gap-1.5 mt-2.5';
+                const sc = latest.scores || {};
+                scoresLine.innerHTML = `
+                    <span class="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">PHQ-9: ${sc.phq ?? 0}/27 (${escapeHtml(sc.phqSeverity || 'Minimal')})</span>
+                    <span class="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">GAD-7: ${sc.gad ?? 0}/21 (${escapeHtml(sc.gadSeverity || 'Minimal')})</span>
+                    <span class="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">WEMWBS: ${sc.wem ?? 0}/70</span>
+                `;
+
+                left.append(titleRow, metaLine, scoresLine);
 
                 const right = document.createElement('div');
-                right.className = 'sm:text-right';
-                const date = document.createElement('p');
-                date.className = 'text-xs font-extrabold text-[#479375] bg-[#ECFDF5] px-3 py-1 rounded-full inline-flex';
-                date.textContent = getRecordDate(latest).getTime() ? getRecordDate(latest).toLocaleDateString() : 'Date unavailable';
-                right.append(date);
-
-                if (group.records.some(r => hasSafetyFlag(r.data))) {
-                    right.insertAdjacentHTML('beforeend', '<span class="mt-2 inline-flex text-xs font-extrabold text-red-700 bg-red-50 border border-red-100 px-2.5 py-1 rounded-full">Safety review</span>');
-                } else if (group.records.some(r => recordNeedsReview(r.data))) {
-                    right.insertAdjacentHTML('beforeend', '<span class="mt-2 inline-flex text-xs font-extrabold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full">Needs review</span>');
-                }
+                right.className = 'sm:text-right shrink-0';
+                const dateEl = document.createElement('p');
+                dateEl.className = 'text-xs font-extrabold text-[#479375] bg-[#ECFDF5] px-3 py-1 rounded-full inline-flex';
+                dateEl.textContent = getRecordDate(latest).getTime() ? getRecordDate(latest).toLocaleDateString() : 'Date unavailable';
+                right.appendChild(dateEl);
 
                 card.append(left, right);
                 card.addEventListener('click', () => showClientJourney(group));
@@ -1696,168 +1687,110 @@ const qualSteps = [
             });
         }
 
-        function buildLongitudinalSeries(records) {
-            return records.map(r => {
-                const q = getQuantitativeProfile(r.data);
-                return {
-                    date: getRecordDate(r),
-                    label: getRecordDate(r).toLocaleDateString(),
-                    data: r.data,
-                    phq: q.phq,
-                    gad: q.gad,
-                    dassD: q.dass.d,
-                    dassA: q.dass.a,
-                    dassS: q.dass.s,
-                    wem: q.wem,
-                    type: r.meta.assessmentType || r.data['assessment-type'] || 'Assessment',
-                    phase: r.meta.treatmentPhase || r.data['treatment-phase'] || 'Unspecified',
-                    session: r.meta.sessionNumber || r.data['session-number'] || ''
-                };
-            });
-        }
-
-        function trajectoryDirection(series, key, higherIsBetter = false) {
-            if (series.length < 2) return {label:'Insufficient data', delta:0, stable:false};
-            const first = Number(series[0][key] || 0), last = Number(series.at(-1)[key] || 0), delta = last - first;
-            const values = series.map(x => Number(x[key] || 0));
-            let signChanges = 0, prev = 0;
-            for (let i=1;i<values.length;i++) {
-                const d = values[i]-values[i-1];
-                const sign = d > 0 ? 1 : d < 0 ? -1 : 0;
-                if (sign && prev && sign !== prev) signChanges++;
-                if (sign) prev = sign;
-            }
-            const improvement = higherIsBetter ? delta : -delta;
-            const label = improvement > 2 ? 'Improving' : improvement < -2 ? 'Deteriorating' : Math.abs(delta) <= 2 ? 'Broadly stable' : 'Fluctuating';
-            return {label, delta, stable: signChanges <= 1};
-        }
-
-        function formatDelta(delta) { return delta > 0 ? `+${delta}` : String(delta); }
-
-        function themeMatrixForRecords(records) {
-            return analysisThemeCatalog.slice(0,9).map(theme => {
-                const cells = records.map(r => {
-                    const result = analyzeQualitativeThemes(r.data).themes.find(t => t.id === theme.id);
-                    if (!result) return {level:'not-mentioned', symbol:'·'};
-                    if (result.mentions >= 3 || result.domains.length >= 2) return {level:'high', symbol:'●'};
-                    if (result.mentions === 2) return {level:'moderate', symbol:'◐'};
-                    return {level:'tentative', symbol:'○'};
-                });
-                return {...theme, cells};
-            });
-        }
-
-        function renderThemeEvolution(series) {
-            const head = document.getElementById('theme-evolution-head');
-            const body = document.getElementById('theme-evolution-body');
-            head.innerHTML = `<tr class="bg-slate-50"><th class="text-left px-5 py-3 font-extrabold text-slate-600 sticky left-0 bg-slate-50">Theme</th>${series.map((s,i)=>`<th class="px-3 py-3 text-xs font-extrabold text-slate-500 whitespace-nowrap">T${i+1}</th>`).join('')}<th class="text-left px-5 py-3 font-extrabold text-slate-600">Longitudinal read</th></tr>`;
-            const matrix = themeMatrixForRecords(series.map(s => ({data:s.data})));
-            body.innerHTML = matrix.map(theme => {
-                const levels = theme.cells.map(c=>c.level);
-                const firstPresent = levels.findIndex(l=>l!=='not-mentioned');
-                const lastPresent = [...levels].reverse().findIndex(l=>l!=='not-mentioned');
-                const lastIndex = lastPresent === -1 ? -1 : levels.length - 1 - lastPresent;
-                let read = 'Not sufficiently mentioned to characterize a trajectory.';
-                if (firstPresent >= 0 && lastIndex >= 0) {
-                    const first = levels[firstPresent], last = levels[lastIndex];
-                    if (['high','moderate','tentative'].indexOf(first)>=0 && last==='not-mentioned') read='Later assessments do not mention this theme; persistence is unresolved.';
-                    else if (['high','moderate'].indexOf(first)>=0 && last==='tentative') read='Appears less salient in later available narrative.';
-                    else if (first==='tentative' && last==='high') read='Appears to become more salient later.';
-                    else read='Theme remains variably present across the assessment series.';
-                }
-                return `<tr class="border-t border-slate-100"><td class="px-5 py-4 font-extrabold text-slate-800 whitespace-nowrap sticky left-0 bg-white">${escapeHtml(theme.label)}</td>${theme.cells.map(c=>`<td class="px-3 py-4 text-center font-extrabold text-slate-600" title="${escapeHtml(c.level)}">${c.symbol}</td>`).join('')}<td class="px-5 py-4 text-xs text-slate-500 leading-relaxed min-w-[260px]">${escapeHtml(read)}</td></tr>`;
-            }).join('');
-        }
-
-        function renderLongitudinalChart(series) {
+        function renderLongitudinalChart(chartSeries) {
             const ctx = document.getElementById('longitudinalChart').getContext('2d');
             if (window.longitudinalChartInstance) window.longitudinalChartInstance.destroy();
             window.longitudinalChartInstance = new Chart(ctx, {
-                type:'line',
-                data:{
-                    labels:series.map(s=>s.label),
-                    datasets:[
-                        {label:'PHQ-9',data:series.map(s=>s.phq),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',tension:.25,borderWidth:2,pointRadius:3},
-                        {label:'GAD-7',data:series.map(s=>s.gad),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.08)',tension:.25,borderWidth:2,pointRadius:3},
-                        {label:'WEMWBS',data:series.map(s=>s.wem),borderColor:'#479375',backgroundColor:'rgba(71,147,117,.08)',tension:.25,borderWidth:2,pointRadius:3}
+                type: 'line',
+                data: {
+                    labels: chartSeries.map(s => s.label),
+                    datasets: [
+                        { label: 'PHQ-9', data: chartSeries.map(s => s.phq), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.08)', tension: .25, borderWidth: 2, pointRadius: 3 },
+                        { label: 'GAD-7', data: chartSeries.map(s => s.gad), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.08)', tension: .25, borderWidth: 2, pointRadius: 3 },
+                        { label: 'WEMWBS', data: chartSeries.map(s => s.wem), borderColor: '#479375', backgroundColor: 'rgba(71,147,117,.08)', tension: .25, borderWidth: 2, pointRadius: 3 }
                     ]
                 },
-                options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(15,23,42,.06)'}},x:{grid:{display:false}}}}
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(15,23,42,.06)' } }, x: { grid: { display: false } } } }
             });
         }
 
         function showClientJourney(group) {
             portalMode = true;
-            const series = buildLongitudinalSeries(group.records);
-            const first = series[0], latest = series.at(-1);
-            document.querySelectorAll('.step-section').forEach(el=>el.classList.remove('active'));
+            const long = group.longitudinal || {};
+            const latest = group.records?.at(-1) || { meta: {}, data: {} };
+
+            document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
             document.getElementById('step-client-journey').classList.add('active');
             document.getElementById('header-bar').classList.remove('hidden');
+            document.getElementById('client-progress-header').classList.add('hidden');
             document.getElementById('nav-footer').classList.add('hidden');
-            document.getElementById('section-label').textContent='Clinician portal';
-            document.getElementById('section-counter').textContent='Longitudinal patient view';
-            document.getElementById('progress-bar').style.width='100%';
-            document.getElementById('progress-text').textContent='';
-            document.getElementById('remaining-text').textContent='';
 
             const patientName = latest?.data?.['demo-name'] || latest?.meta?.name || 'Patient';
             document.getElementById('journey-patient-summary').textContent = `${patientName} · ${group.clientId}`;
-            document.getElementById('journey-assessments').textContent = series.length;
-            const spanDays = Math.max(0, Math.round((latest.date - first.date)/86400000));
-            document.getElementById('journey-span').textContent = series.length>1 ? `${spanDays} day${spanDays===1?'':'s'}` : 'Single assessment';
-            const phqDir=trajectoryDirection(series,'phq'), gadDir=trajectoryDirection(series,'gad'), wemDir=trajectoryDirection(series,'wem',true);
-            document.getElementById('journey-phq-change').textContent = series.length>1 ? `${formatDelta(phqDir.delta)} · ${phqDir.label}` : '--';
-            document.getElementById('journey-gad-change').textContent = series.length>1 ? `${formatDelta(gadDir.delta)} · ${gadDir.label}` : '--';
-            document.getElementById('journey-wem-change').textContent = series.length>1 ? `${formatDelta(wemDir.delta)} · ${wemDir.label}` : '--';
+            document.getElementById('journey-assessments').textContent = group.records.length;
+            document.getElementById('journey-span').textContent = long.spanLabel || 'Single assessment';
+            document.getElementById('journey-phq-change').textContent = long.phqChange || '--';
+            document.getElementById('journey-gad-change').textContent = long.gadChange || '--';
+            document.getElementById('journey-wem-change').textContent = long.wemChange || '--';
 
-            const attention=[];
-            if (hasSafetyFlag(latest.data)) attention.push('The most recent assessment contains a safety flag requiring direct clinical review.');
-            if (phqDir.label==='Deteriorating' || gadDir.label==='Deteriorating') attention.push('A recent symptom trajectory shows deterioration relative to baseline. Review recent stressors, treatment response, functioning, and safety.');
-            if (attention.length) { document.getElementById('journey-attention').classList.remove('hidden'); document.getElementById('journey-attention-text').textContent=attention.join(' '); } else document.getElementById('journey-attention').classList.add('hidden');
+            const attention = long.attentionNotes || [];
+            if (attention.length) {
+                document.getElementById('journey-attention').classList.remove('hidden');
+                document.getElementById('journey-attention-text').textContent = attention.join(' ');
+            } else {
+                document.getElementById('journey-attention').classList.add('hidden');
+            }
 
-            const cards=[
-                ['PHQ-9',first.phq,latest.phq,27,'Symptoms'],['GAD-7',first.gad,latest.gad,21,'Symptoms'],['DASS stress',first.dassS,latest.dassS,42,'Symptoms'],['WEMWBS',first.wem,latest.wem,70,'Well-being']
-            ];
-            document.getElementById('journey-score-cards').innerHTML=cards.map(([label,b,c,max,type])=>{const d=c-b; return `<article class="rounded-2xl bg-slate-50 border border-slate-100 p-4"><div class="flex justify-between gap-3"><span class="text-sm font-extrabold text-slate-700">${label}</span><span class="text-xs font-extrabold ${d<0&&type==='Symptoms'||d>0&&type==='Well-being'?'text-emerald-700':'text-slate-500'}">${formatDelta(d)}</span></div><div class="text-xs text-slate-400 mt-2">Baseline ${b}/${max} · Current ${c}/${max}</div><div class="severity-bar mt-3"><div style="width:${Math.max(0,Math.min(100,c/max*100))}%"></div></div></article>`}).join('');
-            renderLongitudinalChart(series);
-            renderThemeEvolution(series);
+            const scoreCards = long.scoreCards || [];
+            document.getElementById('journey-score-cards').innerHTML = scoreCards.map(c => `
+                <article class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                    <div class="flex justify-between gap-3"><span class="text-sm font-extrabold text-slate-700">${escapeHtml(c.label)}</span><span class="text-xs font-extrabold ${c.positive ? 'text-emerald-700' : 'text-slate-500'}">${escapeHtml(c.deltaLabel)}</span></div>
+                    <div class="text-xs text-slate-400 mt-2">Baseline ${c.baseline}/${c.max} · Current ${c.current}/${c.max}</div>
+                    <div class="severity-bar mt-3"><div class="fill" style="width:${Math.max(0, Math.min(100, (c.current / c.max) * 100))}%"></div></div>
+                </article>`).join('');
 
-            const firstAna=analyzeQualitativeThemes(first.data), lastAna=analyzeQualitativeThemes(latest.data);
-            const firstSynth=buildPhenomenologicalSynthesis(first.data,firstAna.themes), lastSynth=buildPhenomenologicalSynthesis(latest.data,lastAna.themes);
-            document.getElementById('journey-ipa').innerHTML=firstSynth.map((item,i)=>{const later=lastSynth[i];return `<article class="analysis-card"><span class="analysis-tag">${escapeHtml(item.label)}</span><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mt-3">At baseline</p><p class="text-sm text-slate-700 leading-relaxed mt-1">${escapeHtml(item.text)}</p><p class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mt-3">Most recent</p><p class="text-sm text-slate-700 leading-relaxed mt-1">${escapeHtml(later?.text || 'Not enough recent narrative to compare.')}</p></article>`}).join('');
+            renderLongitudinalChart(long.chartSeries || []);
 
-            const latestIntegrated=buildMixedMethodIntegration(lastAna,getQuantitativeProfile(latest.data));
-            const currentThemeIds=new Set(lastAna.themes.map(t=>t.id));
-            const previousThemeIds=new Set(firstAna.themes.map(t=>t.id));
-            const integration=[];
-            latestIntegrated.slice(0,6).forEach(item=>integration.push(item));
-            const changedThemes=analysisThemeCatalog.filter(t=>currentThemeIds.has(t.id)!==previousThemeIds.has(t.id));
-            if(changedThemes.length) integration.push(...changedThemes.slice(0,2).map(theme=>({theme,type:'complementary',relationship:`Theme presence differs between baseline and the most recent narrative. Review whether this reflects meaningful change, changed circumstances, or simply a theme not being mentioned.` ,linked:[]})));
-            document.getElementById('journey-integration').innerHTML=(integration.length?integration:[{theme:{label:'No stable integration pattern'},type:'unresolved',relationship:'There is not enough repeated data to characterize a reliable qualitative-quantitative relationship.',linked:[]}]).map(item=>`<article class="analysis-card ${item.type}"><div class="flex items-center justify-between gap-2"><h5 class="font-extrabold text-slate-800">${escapeHtml(item.theme.label)}</h5><span class="analysis-tag">${escapeHtml(item.type)}</span></div><p class="text-sm text-slate-700 leading-relaxed mt-2">${escapeHtml(item.relationship)}</p><p class="text-xs text-slate-500 mt-2">${escapeHtml(item.linked.map(x=>`${x.label}: ${x.severity} (${x.score})`).join(' · '))}</p></article>`).join('');
+            const head = document.getElementById('theme-evolution-head');
+            const body = document.getElementById('theme-evolution-body');
+            const seriesCount = group.records.length;
+            head.innerHTML = `<tr class="bg-slate-50"><th class="text-left px-5 py-3 font-extrabold text-slate-600 sticky left-0 bg-slate-50">Theme</th>${Array.from({ length: seriesCount }, (_, i) => `<th class="px-3 py-3 text-xs font-extrabold text-slate-500 whitespace-nowrap">T${i + 1}</th>`).join('')}<th class="text-left px-5 py-3 font-extrabold text-slate-600">Longitudinal read</th></tr>`;
+            body.innerHTML = (long.themeEvolution || []).map(row => `
+                <tr class="border-t border-slate-100">
+                    <td class="px-5 py-4 font-extrabold text-slate-800 whitespace-nowrap sticky left-0 bg-white">${escapeHtml(row.label)}</td>
+                    ${(row.cells || []).map(c => `<td class="px-3 py-4 text-center font-extrabold text-slate-600" title="${escapeHtml(c.level)}">${escapeHtml(c.symbol)}</td>`).join('')}
+                    <td class="px-5 py-4 text-xs text-slate-500 leading-relaxed min-w-[260px]">${escapeHtml(row.read)}</td>
+                </tr>`).join('');
 
-            const questions=buildClinicalExploration(lastAna,getQuantitativeProfile(latest.data));
-            const longitudinalQuestions=[];
-            if (series.length>=2 && (phqDir.label==='Deteriorating'||gadDir.label==='Deteriorating')) longitudinalQuestions.push('Explore what has changed recently and whether symptom worsening is linked to new stressors, treatment barriers, or changes in functioning.');
-            if (series.length>=3 && phqDir.label==='Improving' && wemDir.label==='Improving') longitudinalQuestions.push('Explore what the client believes has contributed to improvement and which gains feel most sustainable.');
-            if (series.length>=3) longitudinalQuestions.push('Ask which changes the client experiences as most meaningful, even where questionnaire scores and narrative emphasis do not fully align.');
-            const allQuestions=[...longitudinalQuestions,...questions].slice(0,8);
-            document.getElementById('journey-questions').innerHTML=allQuestions.map((q,i)=>`<article class="analysis-card"><div class="flex items-start gap-3"><span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-extrabold shrink-0">${i+1}</span><p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(q)}</p></div></article>`).join('');
+            document.getElementById('journey-ipa').innerHTML = (long.ipaComparison || []).map(item => `
+                <article class="analysis-card">
+                    <span class="analysis-tag">${escapeHtml(item.label)}</span>
+                    <p class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mt-3">At baseline</p>
+                    <p class="text-sm text-slate-700 leading-relaxed mt-1">${escapeHtml(item.baseline)}</p>
+                    <p class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mt-3">Most recent</p>
+                    <p class="text-sm text-slate-700 leading-relaxed mt-1">${escapeHtml(item.latest)}</p>
+                </article>`).join('');
 
-            document.getElementById('journey-timeline').innerHTML=series.slice().reverse().map((item,revIndex)=>{const originalIndex=series.length-1-revIndex;const summary=`PHQ-9 ${item.phq} · GAD-7 ${item.gad} · WEMWBS ${item.wem}`;const btn=document.createElement('button');return `<div class="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><p class="font-extrabold text-slate-800">${escapeHtml(item.type)}</p><p class="text-xs text-slate-500 mt-1">${escapeHtml(item.phase)}${item.session?` · Session ${escapeHtml(item.session)}`:''} · ${escapeHtml(item.label)}</p><p class="text-xs text-slate-400 mt-1">${escapeHtml(summary)}</p></div><button type="button" class="focus-ring px-4 py-2.5 rounded-full border border-slate-200 bg-white text-slate-700 text-sm font-extrabold" onclick="openJourneyAssessment(${originalIndex})">Open assessment</button></div>`}).join('');
-            window.currentJourneyRecords=group.records;
-            window.scrollTo({top:0,behavior:'smooth'});
+            const integration = long.integration || [];
+            document.getElementById('journey-integration').innerHTML = (integration.length
+                ? integration
+                : [{ themeLabel: 'No stable integration pattern', type: 'unresolved', relationship: 'Not enough repeated data to characterize a reliable qualitative-quantitative relationship.', linkedSummary: '' }]
+            ).map(item => `<article class="analysis-card ${escapeHtml(item.type || 'complementary')}"><div class="flex items-center justify-between gap-2"><h5 class="font-extrabold text-slate-800">${escapeHtml(item.themeLabel)}</h5><span class="analysis-tag">${escapeHtml(item.type)}</span></div><p class="text-sm text-slate-700 leading-relaxed mt-2">${escapeHtml(item.relationship)}</p><p class="text-xs text-slate-500 mt-2">${escapeHtml(item.linkedSummary || '')}</p></article>`).join('');
+
+            document.getElementById('journey-questions').innerHTML = (long.nextSessionQuestions || []).map((q, i) => `
+                <article class="analysis-card"><div class="flex items-start gap-3"><span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-extrabold shrink-0">${i + 1}</span><p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(q)}</p></div></article>`).join('');
+
+            document.getElementById('journey-timeline').innerHTML = group.records.slice().reverse().map((rec, revIndex) => {
+                const originalIndex = group.records.length - 1 - revIndex;
+                const sc = rec.scores || {};
+                const dLabel = getRecordDate(rec).getTime() ? getRecordDate(rec).toLocaleDateString() : 'Date unavailable';
+                const summary = `PHQ-9 ${sc.phq ?? 0} · GAD-7 ${sc.gad ?? 0} · WEMWBS ${sc.wem ?? 0}`;
+                return `<div class="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><p class="font-extrabold text-slate-800">${escapeHtml(rec.meta?.assessmentType || 'Assessment')}</p><p class="text-xs text-slate-500 mt-1">${escapeHtml(rec.meta?.treatmentPhase || '')}${rec.meta?.sessionNumber ? ` · Session ${escapeHtml(rec.meta.sessionNumber)}` : ''} · ${escapeHtml(dLabel)}</p><p class="text-xs text-slate-400 mt-1">${escapeHtml(summary)}</p></div><button type="button" class="focus-ring px-4 py-2.5 rounded-full border border-slate-200 bg-white text-slate-700 text-sm font-extrabold" onclick="openJourneyAssessment(${originalIndex})">Open assessment</button></div>`;
+            }).join('');
+
+            window.currentJourneyRecords = group.records;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function openJourneyAssessment(index) {
-            const record=window.currentJourneyRecords?.[index];
-            if (record) generateDashboard(record.data);
+            const record = window.currentJourneyRecords?.[index];
+            if (record) generateDashboard(record);
         }
 
         function updateAdminStats() {
-            const normalized = clinicianRecords.map(normalizeRecord);
-            document.getElementById('stat-records').textContent = new Set(normalized.map(r => r.meta.clientId || r.data['client-id'] || 'UNKNOWN')).size;
-            document.getElementById('stat-safety').textContent = normalized.filter(r => hasSafetyFlag(r.data)).length;
-            document.getElementById('stat-review').textContent = normalized.filter(r => recordNeedsReview(r.data)).length;
+            document.getElementById('stat-records').textContent = clinicianRecords.length;
+            document.getElementById('stat-safety').textContent = clinicianRecords.filter(g => g.safetyFlag).length;
+            document.getElementById('stat-review').textContent = clinicianRecords.filter(g => g.needsReview).length;
             document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
@@ -1867,12 +1800,10 @@ const qualSteps = [
             document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
             document.getElementById('step-admin-list').classList.add('active');
             document.getElementById('header-bar').classList.remove('hidden');
+            document.getElementById('client-progress-header').classList.add('hidden');
             document.getElementById('nav-footer').classList.add('hidden');
-            document.getElementById('section-label').textContent = 'Clinician portal';
-            document.getElementById('section-counter').textContent = 'Patient files';
-            document.getElementById('progress-bar').style.width = '100%';
-            document.getElementById('progress-text').textContent = '';
-            document.getElementById('remaining-text').textContent = '';
+            document.getElementById('clinician-lock').classList.add('hidden');
+            document.getElementById('header-lock-now').classList.remove('hidden');
             updateAdminStats();
             renderPatientList();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1896,10 +1827,11 @@ const qualSteps = [
 
         async function fetchPatients() {
             const container = document.getElementById('client-list-container');
-            container.innerHTML = '<div class="text-center py-16 text-slate-400 font-semibold">Loading patient records...</div>';
+            container.innerHTML = '<div class="text-center py-16 text-slate-400 font-semibold">Loading server-scored records...</div>';
 
             if (!clinicianToken) {
-                throw new Error('No active clinician session.');
+                logoutClinician(false);
+                return;
             }
 
             try {
@@ -1917,27 +1849,26 @@ const qualSteps = [
             } catch (error) {
                 console.error(error);
                 container.innerHTML = '<div class="text-center py-16"><p class="text-red-600 font-extrabold">Unable to load the clinician portal.</p><p class="text-sm text-slate-400 mt-2">Your session may have expired. Please sign in again.</p></div>';
-
                 if (String(error.message || '').toLowerCase().includes('expired') || String(error.message || '').toLowerCase().includes('unauthorized')) {
                     logoutClinician(false);
                 } else {
-                    showToast('Clinician portal could not be opened.');
+                    showToast('Clinician portal could not be refreshed.');
                 }
             }
         }
 
-        function openClinicianModal() {
+        function openClinicianModal(showTimeoutMessage = false) {
             if (clinicianAuthenticated && Date.now() < clinicianSessionExpiresAt) {
                 showAdminList(clinicianRecords);
                 return;
             }
             clinicianAuthenticated = false;
-            clinicianPin = null;
             const modal = document.getElementById('clinician-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.getElementById('clinician-pin').value = '';
             document.getElementById('clinician-login-error').classList.add('hidden');
+            document.getElementById('clinician-timeout-note').classList.toggle('hidden', !showTimeoutMessage);
             setTimeout(() => document.getElementById('clinician-pin').focus(), 50);
         }
 
@@ -1977,6 +1908,7 @@ const qualSteps = [
                 clinicianAuthenticated = true;
                 clinicianToken = data.token;
                 clinicianSessionExpiresAt = Date.now() + ((Number(data.expiresIn) || SESSION_MINUTES * 60) * 1000);
+                lastClinicianActivityAt = Date.now();
                 clinicianRecords = data.clients;
 
                 startClinicianSessionTimer();
@@ -1985,7 +1917,7 @@ const qualSteps = [
                 showToast('Clinician portal opened.', 'success');
             } catch (e) {
                 console.error(e);
-                error.textContent = 'Access denied. Please check your PIN or connection.';
+                error.textContent = 'Access denied. Please check your PIN or server connection.';
                 error.classList.remove('hidden');
                 input.select();
             } finally {
@@ -1997,23 +1929,31 @@ const qualSteps = [
         function startClinicianSessionTimer() {
             clearInterval(clinicianSessionTimer);
             clinicianSessionTimer = setInterval(() => {
-                if (!clinicianAuthenticated || Date.now() >= clinicianSessionExpiresAt) {
-                    logoutClinician(false);
+                if (!clinicianAuthenticated) return;
+                const expired = Date.now() >= clinicianSessionExpiresAt;
+                const idleLocked = (Date.now() - lastClinicianActivityAt) >= INACTIVITY_IDLE_MS;
+                if (expired || idleLocked) {
+                    logoutClinician(false, idleLocked);
                 }
             }, 1000);
         }
 
-        async function logoutClinician(showMessage = true) {
+        async function logoutClinician(showMessage = true, dueToInactivity = false) {
             const token = clinicianToken;
 
             clinicianAuthenticated = false;
             clinicianToken = null;
-            clinicianPin = null;
             clinicianRecords = [];
-            activePatientData = null;
+            activePatientRecord = null;
+            window.currentJourneyRecords = [];
             portalMode = false;
             clearInterval(clinicianSessionTimer);
             clinicianSessionExpiresAt = 0;
+
+            document.getElementById('clinician-lock').classList.remove('hidden');
+            document.getElementById('header-lock-now').classList.add('hidden');
+            document.getElementById('patient-search').value = '';
+            document.getElementById('patient-filter').value = 'all';
 
             if (token) {
                 try {
@@ -2023,11 +1963,19 @@ const qualSteps = [
                 }
             }
 
-            document.getElementById('patient-search').value = '';
-            document.getElementById('patient-filter').value = 'all';
             showStep(0, false);
-            if (showMessage) showToast('Clinician session ended.');
+            if (dueToInactivity) {
+                openClinicianModal(true);
+            } else if (showMessage) {
+                showToast('Clinician session locked and memory cleared.');
+            }
         }
+
+        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, () => {
+                if (clinicianAuthenticated) lastClinicianActivityAt = Date.now();
+            }, { passive: true });
+        });
 
         document.addEventListener('change', (e) => {
             if (e.target.matches('.save-target')) {
@@ -2040,27 +1988,66 @@ const qualSteps = [
             }
             if (e.target.matches('.save-target-radio')) {
                 const group = e.target.closest('[data-radio-group]');
-                if (group) group.classList.remove('radio-error');
+                if (group) {
+                    group.classList.remove('radio-error');
+                    const nextGroup = group.nextElementSibling?.nextElementSibling;
+                    if (nextGroup && nextGroup.matches('[data-radio-group]') && !nextGroup.querySelector('input:checked')) {
+                        setTimeout(() => nextGroup.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 180);
+                    }
+                }
+                refreshScaleJumpIndicators();
                 saveDataLocally();
             }
+        });
+
+        document.addEventListener('click', (e) => {
+            const dot = e.target.closest('.q-jump-dot');
+            if (!dot) return;
+            const targetName = dot.getAttribute('data-jump-target');
+            const group = document.querySelector(`[data-radio-group="${CSS.escape(targetName)}"]`);
+            if (group) group.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
         document.getElementById('btn-next').addEventListener('click', goNext);
         document.getElementById('btn-back').addEventListener('click', goBack);
         document.getElementById('lang-btn').addEventListener('click', toggleLanguage);
-        document.getElementById('clinician-lock').addEventListener('click', openClinicianModal);
+        document.getElementById('clinician-lock').addEventListener('click', () => openClinicianModal(false));
+        document.getElementById('header-lock-now').addEventListener('click', () => logoutClinician(true, false));
         document.getElementById('clinician-close').addEventListener('click', closeClinicianModal);
         document.getElementById('clinician-login-btn').addEventListener('click', submitClinicianLogin);
         document.getElementById('clinician-pin').addEventListener('keydown', e => { if (e.key === 'Enter') submitClinicianLogin(); });
         document.getElementById('clinician-modal').addEventListener('click', e => { if (e.target.id === 'clinician-modal') closeClinicianModal(); });
-        document.getElementById('admin-logout').addEventListener('click', () => logoutClinician(true));
+        document.getElementById('admin-logout').addEventListener('click', () => logoutClinician(true, false));
         document.getElementById('admin-refresh').addEventListener('click', () => fetchPatients());
         document.getElementById('patient-search').addEventListener('input', renderPatientList);
         document.getElementById('patient-filter').addEventListener('change', renderPatientList);
         document.getElementById('results-back').addEventListener('click', goBackToPatients);
         document.getElementById('journey-back').addEventListener('click', goBackToPatients);
+        document.getElementById('btn-copy-note').addEventListener('click', copyClinicianNoteSummary);
         document.getElementById('btn-print').addEventListener('click', () => window.print());
         document.getElementById('retry-submit').addEventListener('click', submitAssessment);
+
+        document.getElementById('btn-resume-draft').addEventListener('click', () => {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const data = safeJsonParse(raw) || {};
+            loadData();
+            document.getElementById('draft-recovery-banner').classList.add('hidden');
+            const targetStep = Math.min(sequence.length - 2, Math.max(0, Number(data._lastStepIndex || 0)));
+            showStep(targetStep, true);
+            showToast('Unfinished intake restored.', 'success');
+        });
+
+        document.getElementById('btn-discard-draft').addEventListener('click', () => {
+            clearDraft();
+            document.getElementById('draft-recovery-banner').classList.add('hidden');
+            showToast('Previous draft cleared.');
+        });
+
+        document.getElementById('btn-copy-receipt').addEventListener('click', () => {
+            const code = document.getElementById('closure-ref-code').textContent;
+            navigator.clipboard?.writeText(`Ghazali Clinical Practice Intake Receipt\nReference Code: ${code}\nDate: ${new Date().toLocaleDateString()}`);
+            showToast('Reference receipt copied.', 'success');
+        });
 
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeClinicianModal();
@@ -2068,6 +2055,10 @@ const qualSteps = [
 
         window.addEventListener('beforeunload', () => {
             if (!portalMode && !submissionDone) saveDataLocally();
+            if (clinicianAuthenticated) {
+                clinicianRecords = [];
+                activePatientRecord = null;
+            }
         });
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -2080,6 +2071,7 @@ const qualSteps = [
             rebuildScales();
             ensureClientId();
             applyLanguage();
+            checkSavedDraftBanner();
             loadData();
             bindDynamicInputs();
             showStep(0, false);
